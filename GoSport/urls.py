@@ -24,4 +24,5 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('negocio/', include('negocio.urls')),
     path('', DashboardView.as_view(), name='dashboard'),
+    path('canchas/', include('canchas.urls')),
 ]

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+
+    <header class="flex items-end justify-between border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Canchas</h2>
+            <p class="text-gray-400 mt-1">Encuentra tu cancha ideal</p>
+        </div>
+        {% if user.rol == 'DUEÑO' %}
+        <a href="{% url 'canchas:nueva' %}"
+           class="bg-neon text-black font-bold px-5 py-2.5 rounded-xl hover:bg-green-300 transition">
+            + Nueva Cancha
+        </a>
+        {% endif %}
+    </header>
+
+    <!-- Filtro por deporte -->
+    <div class="flex gap-3 flex-wrap">
+        <a href="{% url 'canchas:lista' %}"
+           class="px-4 py-1.5 rounded-full text-sm border transition
+                  {% if not deporte_activo %}border-neon text-neon{% else %}border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
+            Todos
+        </a>
+        {% for dep in deportes %}
+        <a href="?deporte={{ dep.id }}"
+           class="px-4 py-1.5 rounded-full text-sm border transition
+                  {% if deporte_activo == dep.id|stringformat:'s' %}border-neon text-neon{% else %}border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
+            {{ dep.nombre }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Grid de canchas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for cancha in canchas %}
+        <div class="bg-gray-900/50 border border-gray-800/80 rounded-2xl overflow-hidden
+                    hover:border-neon/50 hover:shadow-[0_0_30px_rgba(0,255,136,0.15)]
+                    transition-all duration-500 flex flex-col group">
+
+            <div class="h-48 bg-black relative overflow-hidden">
+                {% if cancha.imagen %}
+                    <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}"
+                         class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700">
+                {% else %}
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900"></div>
+                {% endif %}
+                <div class="absolute top-4 right-4 bg-black/60 backdrop-blur text-neon text-sm
+                            px-3 py-1 rounded-full border border-neon/30 font-bold">
+                    ${{ cancha.precio }}/hr
+                </div>
+                <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-white text-xs
+                            px-3 py-1.5 rounded-full border border-gray-700 font-medium tracking-wide">
+                    {{ cancha.deporte.nombre|upper }}
+                </div>
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col">
+                <h3 class="text-xl font-black text-white mb-1 group-hover:text-neon transition-colors duration-300">
+                    {{ cancha.nombre }}
+                </h3>
+                <p class="text-sm text-gray-400 mb-4">{{ cancha.ubicacion }}</p>
+
+                <div class="mt-auto flex gap-2">
+                    <a href="{% url 'canchas:detalle' cancha.pk %}"
+                       class="flex-1 text-center py-2.5 rounded-xl border border-gray-700
+                              text-gray-300 hover:bg-gray-800 transition text-sm font-medium">
+                        Ver detalle
+                    </a>
+                    {% if user.rol == 'DEPORTISTA' %}
+                    <a href="{% url 'negocio:crear_reserva' cancha.pk %}"
+                       class="flex-1 text-center py-2.5 rounded-xl bg-neon text-black
+                              font-bold hover:bg-green-300 transition text-sm">
+                        Reservar
+                    </a>
+                    {% endif %}
+                    {% if user.rol == 'DUEÑO' and cancha.dueño == user %}
+                    <a href="{% url 'canchas:editar' cancha.pk %}"
+                       class="px-3 py-2.5 rounded-xl border border-gray-700 text-gray-400
+                              hover:text-white hover:border-gray-500 transition text-sm">
+                        ✎
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full border-2 border-dashed border-gray-800 rounded-2xl p-12 text-center text-gray-500">
+            No hay canchas registradas aún.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
