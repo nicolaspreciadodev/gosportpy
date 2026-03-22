@@ -132,3 +132,83 @@ class CanchaDeleteViewTest(CanchaBaseTestCase):
         response = self.client.post(reverse('canchas:eliminar', args=[self.cancha.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Cancha.objects.count(), 1)
+
+
+import datetime
+from .models import Disponibilidad
+from negocio.models import Reserva
+
+class DisponibilidadTests(CanchaBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.disp1 = Disponibilidad.objects.create(
+            cancha=self.cancha,
+            dia_semana=0, # Lunes
+            hora_inicio=datetime.time(10, 0),
+            hora_fin=datetime.time(14, 0)
+        )
+        self.lunes_fecha = '2023-10-02' # 2023-10-02 es un Lunes
+        
+    # Service Tests
+    def test_generar_slots(self):
+        from .services import _generar_slots_por_hora
+        slots = _generar_slots_por_hora(datetime.time(10, 0), datetime.time(12, 0))
+        self.assertEqual(len(slots), 2)
+        self.assertEqual(slots[0], datetime.time(10, 0))
+        
+    def test_obtener_slots_sin_reservas(self):
+        from .services import obtener_slots_disponibles
+        slots = obtener_slots_disponibles(self.cancha.id, self.lunes_fecha)
+        self.assertEqual(len(slots), 4) # 10, 11, 12, 13
+        
+    def test_obtener_slots_con_reserva(self):
+        Reserva.objects.create(
+            usuario=self.deportista, 
+            cancha=self.cancha, 
+            fecha=self.lunes_fecha, 
+            hora=datetime.time(11, 0)
+        )
+        from .services import obtener_slots_disponibles
+        slots = obtener_slots_disponibles(self.cancha.id, self.lunes_fecha)
+        self.assertEqual(len(slots), 3)
+        self.assertNotIn(datetime.time(11, 0), slots)
+        
+    def test_validar_slot_disponible(self):
+        from .services import validar_slot_disponible
+        self.assertTrue(validar_slot_disponible(self.cancha.id, self.lunes_fecha, datetime.time(10,0)))
+        self.assertFalse(validar_slot_disponible(self.cancha.id, self.lunes_fecha, datetime.time(15,0)))
+
+    # API View Tests
+    def test_slots_api_falta_fecha(self):
+        res = self.client.get(reverse('canchas:slots', args=[self.cancha.id]))
+        self.assertEqual(res.status_code, 400)
+        
+    def test_slots_api_success(self):
+        res = self.client.get(reverse('canchas:slots', args=[self.cancha.id]), {'fecha': self.lunes_fecha})
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('10:00', res.json()['slots'])
+        
+    # UI View Tests
+    def test_dueño_puede_ver_gestionar_disponibilidad(self):
+        self.client.login(username='dueño_test', password='pass123')
+        res = self.client.get(reverse('canchas:disponibilidad', args=[self.cancha.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, '10:00')
+        
+    def test_dueño_puede_agregar_disponibilidad(self):
+        self.client.login(username='dueño_test', password='pass123')
+        res = self.client.post(reverse('canchas:disponibilidad', args=[self.cancha.id]), {
+            'dia_semana': 1,
+            'hora_inicio': '08:00',
+            'hora_fin': '10:00'
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(Disponibilidad.objects.count(), 2)
+        
+    def test_dueño_puede_eliminar_disponibilidad(self):
+        self.client.login(username='dueño_test', password='pass123')
+        res = self.client.post(reverse('canchas:disponibilidad', args=[self.cancha.id]), {
+            'delete_id': self.disp1.id
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(Disponibilidad.objects.count(), 0)

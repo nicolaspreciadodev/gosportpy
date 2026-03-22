@@ -117,3 +117,67 @@ class CanchaDeleteView(RoleRequiredMixin, View):
         cancha.delete()
         messages.success(request, f'Cancha "{nombre}" eliminada correctamente.')
         return redirect('canchas:lista')
+
+from django.http import JsonResponse
+from .models import Disponibilidad
+from .forms import DisponibilidadForm
+
+class GestionarDisponibilidadView(RoleRequiredMixin, View):
+    """Permite al DUEÑO definir la disponibilidad repetitiva de su cancha."""
+    allowed_roles = ['DUEÑO']
+
+    def get(self, request, pk):
+        cancha = get_object_or_404(Cancha, pk=pk)
+        services.verificar_propiedad(cancha, request.user)
+        disponibilidades = cancha.disponibilidades.all().order_by('dia_semana', 'hora_inicio')
+        form = DisponibilidadForm()
+        return render(request, 'canchas/gestionar_disponibilidad.html', {
+            'cancha': cancha,
+            'disponibilidades': disponibilidades,
+            'form': form
+        })
+
+    def post(self, request, pk):
+        cancha = get_object_or_404(Cancha, pk=pk)
+        services.verificar_propiedad(cancha, request.user)
+        
+        # Manejar eliminación
+        if 'delete_id' in request.POST:
+            disp_id = request.POST.get('delete_id')
+            cancha.disponibilidades.filter(id=disp_id).delete()
+            messages.success(request, 'Disponibilidad eliminada exitosamente.')
+            return redirect('canchas:disponibilidad', pk=pk)
+            
+        form = DisponibilidadForm(request.POST)
+        if form.is_valid():
+            disp = form.save(commit=False)
+            disp.cancha = cancha
+            try:
+                disp.save()
+                messages.success(request, 'Horario de disponibilidad agregado.')
+            except Exception as e:
+                messages.error(request, 'Ese horario ya existe o hay un conflicto.')
+            return redirect('canchas:disponibilidad', pk=pk)
+            
+        disponibilidades = cancha.disponibilidades.all().order_by('dia_semana', 'hora_inicio')
+        return render(request, 'canchas/gestionar_disponibilidad.html', {
+            'cancha': cancha,
+            'disponibilidades': disponibilidades,
+            'form': form
+        })
+
+
+class DisponibilidadSlotsView(View):
+    """Endpoint AJAX que retorna Array de strings HH:MM de slots disponibles."""
+    
+    def get(self, request, pk):
+        fecha = request.GET.get('fecha')
+        if not fecha:
+            return JsonResponse({'error': 'Falta parámetro fecha YYYY-MM-DD'}, status=400)
+            
+        try:
+            slots = services.obtener_slots_disponibles(pk, fecha)
+            slots_str = [slot.strftime('%H:%M') for slot in slots]
+            return JsonResponse({'slots': slots_str})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)

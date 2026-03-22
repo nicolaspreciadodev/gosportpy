@@ -1,7 +1,7 @@
 # canchas/forms.py
 """Formulario de Cancha con validaciones de negocio."""
 from django import forms
-from .models import Cancha
+from .models import Cancha, Disponibilidad
 
 
 class CanchaForm(forms.ModelForm):
@@ -34,3 +34,14 @@ class CanchaForm(forms.ModelForm):
             if precio > 1_000_000:
                 raise forms.ValidationError("El precio no puede superar $1,000,000.")
         return precio
+
+
+class DisponibilidadForm(forms.ModelForm):
+    class Meta:
+        model = Disponibilidad
+        fields = ['dia_semana', 'hora_inicio', 'hora_fin']
+        widgets = {
+            'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
+            'hora_fin': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
+        }
+

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<div class="flex justify-center items-start mt-10 min-h-full">
+    <div class="auth-card" style="margin:0; width:100%; max-width:500px">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px;flex-shrink:0;"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2 class="auth-title">Mi Perfil</h2>
+        <p class="auth-subtitle">Actualiza tu información personal</p>
+
+        <form method="POST" action="{% url 'usuarios:perfil' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.first_name.id_for_label }}">Nombre</label>
+                <div class="input-wrapper">
+                    <i data-lucide="user" class="input-icon"></i>
+                    <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}"
+                           value="{{ form.first_name.value|default:'' }}"
+                           class="form-input" required>
+                </div>
+                {% if form.first_name.errors %}
+                <p class="text-sm text-red-500 mt-1">{{ form.first_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.last_name.id_for_label }}">Apellido</label>
+                <div class="input-wrapper">
+                    <i data-lucide="users" class="input-icon"></i>
+                    <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}"
+                           value="{{ form.last_name.value|default:'' }}"
+                           class="form-input" required>
+                </div>
+                {% if form.last_name.errors %}
+                <p class="text-sm text-red-500 mt-1">{{ form.last_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Correo electrónico</label>
+                <div class="input-wrapper">
+                    <i data-lucide="mail" class="input-icon"></i>
+                    <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}"
+                           value="{{ form.email.value|default:'' }}"
+                           class="form-input" required>
+                </div>
+                {% if form.email.errors %}
+                <p class="text-sm text-red-500 mt-1">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-primary mt-4">
+                <span>Guardar Cambios</span>
+            </button>
+        </form>
+
+        <div class="auth-divider"><span>Seguridad</span></div>
+
+        <a href="{% url 'usuarios:cambiar_password' %}" class="btn-secondary">
+            Cambiar Contraseña
+        </a>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock content %}

@@ -17,8 +17,15 @@
             <a href="{% url 'dashboard' %}" class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'dashboard' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
                 Dashboard
             </a>
-            
+
+            <a href="{% url 'usuarios:perfil' %}" class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'perfil' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
+                Mi Perfil
+            </a>
+
             {% if user.rol == 'DUEÑO' %}
+            <a href="{% url 'negocio:panel_reservas' %}" class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'panel_reservas' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
+                Reservas Activas
+            </a>
             <a href="{% url 'canchas:lista' %}" class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.app_name == 'canchas' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
                 Mis Canchas
             </a>
@@ -31,7 +38,7 @@
                 </div>
                 <div class="overflow-hidden">
                     <p class="text-sm font-semibold truncate">{{ user.first_name|default:user.username }}</p>
-                    <p class="text-xs text-gray-400 capitalize truncate">{{ user.get_role_display }}</p>
+                    <p class="text-xs text-gray-400 capitalize truncate">{{ user.get_rol_display }}</p>
                 </div>
             </div>
             <form action="{% url 'logout' %}" method="post" class="mt-4">

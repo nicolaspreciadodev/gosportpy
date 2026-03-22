@@ -13,5 +13,5 @@ class CanchaAdmin(admin.ModelAdmin):
 
 @admin.register(Disponibilidad)
 class DisponibilidadAdmin(admin.ModelAdmin):
-    list_display = ('cancha', 'dia', 'hora_inicio', 'hora_fin')
-    list_filter = ('cancha', 'dia')
+    list_display = ('cancha', 'dia_semana', 'hora_inicio', 'hora_fin')
+    list_filter = ('cancha', 'dia_semana')

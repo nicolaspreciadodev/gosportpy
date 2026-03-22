@@ -6,6 +6,8 @@ from .views import (
     CanchaCreateView,
     CanchaUpdateView,
     CanchaDeleteView,
+    GestionarDisponibilidadView,
+    DisponibilidadSlotsView,
 )
 
 app_name = 'canchas'
@@ -16,4 +18,6 @@ urlpatterns = [
     path('<int:pk>/', CanchaDetailView.as_view(), name='detalle'),
     path('<int:pk>/editar/', CanchaUpdateView.as_view(), name='editar'),
     path('<int:pk>/eliminar/', CanchaDeleteView.as_view(), name='eliminar'),
+    path('<int:pk>/disponibilidad/', GestionarDisponibilidadView.as_view(), name='disponibilidad'),
+    path('<int:pk>/slots/', DisponibilidadSlotsView.as_view(), name='slots'),
 ]

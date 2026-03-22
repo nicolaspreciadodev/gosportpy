@@ -35,10 +35,11 @@
                 </div>
                 
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-300">Hora de Inicio (1 hora de duración)</label>
-                    <input type="time" name="hora" required step="3600"
-                           class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300"
-                           min="06:00" max="23:00">
+                    <label class="block text-sm font-medium text-gray-300">Hora de Inicio (slots disponibles)</label>
+                    <select name="hora" id="hora-select" required
+                           class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300">
+                        <option value="">Seleccione una fecha primero</option>
+                    </select>
                 </div>
             </div>
 
@@ -59,4 +60,45 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.querySelector('input[name="fecha"]');
+    const horaSelect = document.getElementById('hora-select');
+    const canchaId = {{ cancha.id }};
+
+    fechaInput.addEventListener('change', function() {
+        if(!this.value) {
+            horaSelect.innerHTML = '<option value="">Seleccione una fecha primero</option>';
+            return;
+        }
+        
+        horaSelect.innerHTML = '<option value="">Cargando horarios...</option>';
+        
+        fetch(`/canchas/${canchaId}/slots/?fecha=${this.value}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) {
+                    horaSelect.innerHTML = `<option value="">Error: ${data.error}</option>`;
+                    return;
+                }
+                
+                if(data.slots && data.slots.length > 0) {
+                    horaSelect.innerHTML = '<option value="">Seleccione un horario</option>';
+                    data.slots.forEach(slot => {
+                        const opt = document.createElement('option');
+                        opt.value = slot;
+                        opt.textContent = slot;
+                        horaSelect.appendChild(opt);
+                    });
+                } else {
+                    horaSelect.innerHTML = '<option value="">No hay horarios disponibles en esta fecha</option>';
+                }
+            })
+            .catch(err => {
+                horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
+            });
+    });
+});
+</script>
 {% endblock %}

@@ -201,3 +201,108 @@ class InscribirEquipoViewTest(TestCase):
         response = self.client.post(url, {'equipo_id': self.equipo.id})
         self.assertRedirects(response, reverse('dashboard'))
         self.assertFalse(self.equipo.torneos.filter(id=self.torneo_cerrado.id).exists())
+
+
+class PanelReservasViewTest(TestCase):
+    """Tests para el Panel de Reservas del Dueño."""
+
+    def setUp(self):
+        from datetime import date, time
+        self.client = Client()
+        self.deporte = Deporte.objects.create(nombre='Tenis')
+        
+        self.dueño1 = CustomUser.objects.create_user(username='d1', password='123', rol='DUEÑO')
+        self.dueño2 = CustomUser.objects.create_user(username='d2', password='123', rol='DUEÑO')
+        self.deportista = CustomUser.objects.create_user(username='dep', password='123', rol='DEPORTISTA')
+
+        self.cancha1 = Cancha.objects.create(nombre='C1', precio=50, ubicacion='A', dueño=self.dueño1, deporte=self.deporte)
+        self.cancha2 = Cancha.objects.create(nombre='C2', precio=50, ubicacion='B', dueño=self.dueño2, deporte=self.deporte)
+
+        self.reserva1 = Reserva.objects.create(usuario=self.deportista, cancha=self.cancha1, fecha=date(2026, 1, 10), hora=time(10, 0), estado='PROGRAMADA')
+        self.reserva2 = Reserva.objects.create(usuario=self.deportista, cancha=self.cancha1, fecha=date(2026, 1, 11), hora=time(11, 0), estado='COMPLETADA')
+        self.reserva3 = Reserva.objects.create(usuario=self.deportista, cancha=self.cancha2, fecha=date(2026, 1, 10), hora=time(10, 0), estado='PROGRAMADA')
+
+        self.url = reverse('negocio:panel_reservas')
+
+    def test_acceso_solo_dueño(self):
+        self.client.login(username='dep', password='123')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_lista_solo_reservas_propias(self):
+        self.client.login(username='d1', password='123')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        reservas = response.context['reservas']
+        self.assertEqual(len(reservas), 2)
+        self.assertIn(self.reserva1, reservas)
+        self.assertIn(self.reserva2, reservas)
+        self.assertNotIn(self.reserva3, reservas)
+
+    def test_filtro_por_estado(self):
+        self.client.login(username='d1', password='123')
+        response = self.client.get(self.url, {'estado': 'COMPLETADA'})
+        reservas = response.context['reservas']
+        self.assertEqual(len(reservas), 1)
+        self.assertEqual(reservas.first(), self.reserva2)
+
+    def test_filtro_por_fecha(self):
+        self.client.login(username='d1', password='123')
+        response = self.client.get(self.url, {'fecha': '2026-01-10'})
+        reservas = response.context['reservas']
+        self.assertEqual(len(reservas), 1)
+        self.assertEqual(reservas.first(), self.reserva1)
+
+
+class SimularPagoViewTest(TestCase):
+    """Tests para simular el pago de reservas."""
+
+    def setUp(self):
+        from datetime import date, time
+        self.client = Client()
+        self.deporte = Deporte.objects.create(nombre='Voley')
+        self.dueño = CustomUser.objects.create_user(username='d1', password='123', rol='DUEÑO')
+        self.deportista1 = CustomUser.objects.create_user(username='dep1', password='123', rol='DEPORTISTA')
+        self.deportista2 = CustomUser.objects.create_user(username='dep2', password='123', rol='DEPORTISTA')
+
+        self.cancha = Cancha.objects.create(nombre='C1', precio=100.00, ubicacion='A', dueño=self.dueño, deporte=self.deporte)
+
+        self.reserva = Reserva.objects.create(
+            usuario=self.deportista1, cancha=self.cancha,
+            fecha=date(2026, 2, 10), hora=time(15, 0), estado='PROGRAMADA'
+        )
+        self.url = reverse('negocio:simular_pago', args=[self.reserva.id])
+
+    def test_acceso_requiere_login(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_pago_exitoso(self):
+        """Un usuario puede pagar su propia reserva."""
+        self.client.login(username='dep1', password='123')
+        response = self.client.post(self.url)
+        self.reserva.refresh_from_db()
+        
+        self.assertTrue(self.reserva.pagado)
+        self.assertRedirects(response, reverse('negocio:factura_detalle', args=[self.reserva.factura.id]))
+
+    def test_pago_ajeno_denegado(self):
+        """Un usuario no puede pagar la reserva de otro."""
+        self.client.login(username='dep2', password='123')
+        response = self.client.post(self.url)
+        self.reserva.refresh_from_db()
+        
+        self.assertFalse(self.reserva.pagado)
+        self.assertRedirects(response, reverse('dashboard'))
+
+    def test_pago_reserva_cancelada_denegado(self):
+        """No se puede pagar una reserva si fue cancelada."""
+        self.reserva.estado = 'CANCELADA'
+        self.reserva.save()
+
+        self.client.login(username='dep1', password='123')
+        response = self.client.post(self.url)
+        
+        self.reserva.refresh_from_db()
+        self.assertFalse(self.reserva.pagado)
+        self.assertRedirects(response, reverse('dashboard'))

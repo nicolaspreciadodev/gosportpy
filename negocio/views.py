@@ -1,4 +1,5 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from urllib import request
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,7 +24,8 @@ class AprobarTorneoView(LoginRequiredMixin, View):
             torneo.estado = 'PUBLICADO'
             messages.success(request, f'El torneo "{torneo.nombre}" ha sido aprobado y publicado.')
         elif accion == 'rechazar':
-            torneo.estado = 'RECHAZADO'
+            torneo.estado = 'PENDIENTE'
+            torneo.is_approved = False
             messages.warning(request, f'El torneo "{torneo.nombre}" ha sido rechazado.')
         else:
             messages.error(request, 'Acción no válida.')
@@ -50,8 +52,13 @@ class CrearReservaView(RoleRequiredMixin, View):
             messages.error(request, 'Debe proporcionar una fecha y hora.')
             return render(request, 'crear_reserva.html', {'cancha': cancha})
 
-        reserva = Reserva(usuario=request.user, cancha=cancha, fecha=fecha, hora=hora)
+        from canchas.services import validar_slot_disponible
+        if not validar_slot_disponible(cancha_id, fecha, hora):
+            messages.error(request, 'El horario seleccionado no está disponible o es inválido.')
+            return render(request, 'crear_reserva.html', {'cancha': cancha})
 
+        reserva = Reserva(usuario=request.user, cancha=cancha, fecha=fecha, hora=hora)
+        
         try:
             reserva.full_clean()
             reserva.save()
@@ -99,7 +106,7 @@ class CancelarReservaView(LoginRequiredMixin, View):
         if reserva.estado == 'CANCELADA':
             messages.error(request, 'Esta reserva ya se encuentra cancelada.')
             return redirect('dashboard')
-            
+
         if reserva.estado == 'COMPLETADA':
             messages.error(request, 'Esta reserva ya se completó, no puede ser cancelada.')
             return redirect('dashboard')
@@ -121,29 +128,80 @@ class InscribirEquipoView(LoginRequiredMixin, View):
     def post(self, request, torneo_id):
         torneo = get_object_or_404(Torneo, id=torneo_id)
         equipo_id = request.POST.get('equipo_id')
-        
+
         if not equipo_id:
             messages.error(request, 'Debe seleccionar un equipo válido.')
             return redirect('dashboard')
-            
+
         equipo = get_object_or_404(Equipo, id=equipo_id)
-        
+
         # Validar permisos: el usuario debe pertenecer al equipo
         if request.user not in equipo.jugadores.all():
             messages.error(request, 'No tienes permiso para inscribir este equipo, ya que no perteneces a sus jugadores.')
             return redirect('dashboard')
-            
+
         # Validar que el torneo esté publicado
         if torneo.estado != 'PUBLICADO':
             messages.error(request, 'El torneo no está abierto para inscripciones.')
             return redirect('dashboard')
-            
+
         # Validar si el equipo ya está inscrito
         if equipo.torneos.filter(id=torneo.id).exists():
             messages.error(request, 'Tu equipo ya está inscrito en este torneo.')
             return redirect('dashboard')
-            
+
         # Realizar inscripción
         equipo.torneos.add(torneo)
         messages.success(request, f'¡El equipo {equipo.nombre} ha sido inscrito en el torneo {torneo.nombre} exitosamente!')
         return redirect('dashboard')
+
+
+class PanelReservasView(RoleRequiredMixin, View):
+    """Vista para que el DUEÑO vea y filtre las reservas de TODAS sus canchas."""
+    allowed_roles = ['DUEÑO']
+
+    def get(self, request):
+        canchas_dueño = Cancha.objects.filter(dueño=request.user)
+        reservas = Reserva.objects.filter(cancha__in=canchas_dueño).order_by('-fecha', '-hora')
+        
+        # Filtros
+        estado_filter = request.GET.get('estado')
+        if estado_filter:
+            reservas = reservas.filter(estado=estado_filter)
+            
+        fecha_filter = request.GET.get('fecha')
+        if fecha_filter:
+            reservas = reservas.filter(fecha=fecha_filter)
+
+        context = {
+            'reservas': reservas,
+            'estado_activo': estado_filter,
+            'fecha_activa': fecha_filter,
+        }
+        return render(request, 'panel_reservas.html', context)
+
+
+class SimularPagoView(LoginRequiredMixin, View):
+    """Vista para simular el pago de una reserva."""
+    def post(self, request, reserva_id):
+        reserva = get_object_or_404(Reserva, id=reserva_id)
+
+        # Solo el dueño de la reserva puede pagarla
+        if reserva.usuario != request.user:
+            messages.error(request, 'No tienes permiso para pagar esta reserva.')
+            return redirect('dashboard')
+
+        if reserva.pagado:
+            messages.warning(request, 'Esta reserva ya se encuentra pagada.')
+            return redirect('dashboard')
+            
+        if reserva.estado != 'PROGRAMADA':
+            messages.error(request, 'Solo las reservas programadas pueden ser pagadas.')
+            return redirect('dashboard')
+
+        # Simular pago exitoso
+        reserva.pagado = True
+        reserva.save()
+        
+        messages.success(request, '¡El pago ha sido procesado exitosamente!')
+        return redirect('negocio:factura_detalle', factura_id=reserva.factura.id)

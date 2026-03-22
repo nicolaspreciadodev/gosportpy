@@ -54,6 +54,11 @@
             </a>
             {% endif %}
             {% if user.rol == 'DUEÑO' and cancha.dueño == user %}
+            <a href="{% url 'canchas:disponibilidad' cancha.pk %}"
+               class="px-6 py-3 border border-neon text-neon rounded-xl
+                      hover:bg-neon hover:text-black transition font-medium">
+                Horarios
+            </a>
             <a href="{% url 'canchas:editar' cancha.pk %}"
                class="px-6 py-3 border border-gray-700 text-gray-300 rounded-xl
                       hover:bg-gray-800 hover:text-white transition font-medium">

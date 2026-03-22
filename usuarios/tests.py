@@ -167,3 +167,86 @@ class PasswordResetFlowTest(TestCase):
         # Verificar que la contraseña original sigue funcionando
         self.usuario.refresh_from_db()
         self.assertTrue(self.usuario.check_password('ClaveOriginal123!'))
+
+
+class PerfilUpdateViewTest(TestCase):
+    """Tests para asegurar que la vista de actualización de perfil funcione correctamente."""
+    def setUp(self):
+        self.client = Client()
+        self.usuario = CustomUser.objects.create_user(
+            username='perfil_user',
+            email='perfil@test.com',
+            first_name='Original',
+            last_name='Original',
+            password='ClaveSegura123!',
+            rol='DEPORTISTA'
+        )
+        self.otro_usuario = CustomUser.objects.create_user(
+            username='otro_user',
+            email='otro@test.com',
+            password='ClaveSegura123!'
+        )
+        self.url = reverse('usuarios:perfil')
+
+    def test_perfil_requiere_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_perfil_get(self):
+        self.client.login(username='perfil_user', password='ClaveSegura123!')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Original')
+
+    def test_perfil_post_exitoso(self):
+        self.client.login(username='perfil_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'first_name': 'Nuevo',
+            'last_name': 'Nombre',
+            'email': 'nuevo@test.com'
+        })
+        self.assertRedirects(response, self.url)
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.first_name, 'Nuevo')
+        self.assertEqual(self.usuario.email, 'nuevo@test.com')
+
+    def test_perfil_email_duplicado(self):
+        self.client.login(username='perfil_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'first_name': 'Nuevo',
+            'last_name': 'Nombre',
+            'email': 'otro@test.com' # Email de otro_usuario
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Este correo ya está en uso por otra cuenta.')
+
+
+class CustomPasswordChangeViewTest(TestCase):
+    """Tests para el cambio de contraseñas de sesión activa."""
+    def setUp(self):
+        self.client = Client()
+        self.usuario = CustomUser.objects.create_user(
+            username='pass_user',
+            password='ClaveSegura123!',
+        )
+        self.url = reverse('usuarios:cambiar_password')
+
+    def test_password_change_requiere_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_password_change_get(self):
+        self.client.login(username='pass_user', password='ClaveSegura123!')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_password_change_post_exitoso(self):
+        self.client.login(username='pass_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'old_password': 'ClaveSegura123!',
+            'new_password1': 'NuevaClave456!',
+            'new_password2': 'NuevaClave456!',
+        })
+        self.assertRedirects(response, reverse('usuarios:perfil'))
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('NuevaClave456!'))
