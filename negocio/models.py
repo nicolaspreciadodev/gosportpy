@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from canchas.models import Cancha
+from canchas.models import Cancha, Deporte
 
 class Torneo(models.Model):
     ESTADO_CHOICES = (
@@ -9,6 +9,10 @@ class Torneo(models.Model):
     )
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin = models.DateField(null=True, blank=True)
+    deporte = models.ForeignKey(Deporte, on_delete=models.CASCADE, null=True, blank=True)
+    canchas = models.ManyToManyField(Cancha, related_name='torneos_list', blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
     is_approved = models.BooleanField(default=False)
     organizador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='torneos_organizados')
@@ -19,10 +23,16 @@ class Torneo(models.Model):
 from django.core.exceptions import ValidationError
 
 class Reserva(models.Model):
+    ESTADO_CHOICES = (
+        ('PROGRAMADA', 'Programada'),
+        ('COMPLETADA', 'Completada'),
+        ('CANCELADA', 'Cancelada'),
+    )
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas')
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='reservas')
     fecha = models.DateField()
     hora = models.TimeField()
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PROGRAMADA')
     pagado = models.BooleanField(default=False)
     
     def clean(self):
@@ -41,6 +51,20 @@ class Reserva(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def puede_cancelar(self):
+        from django.utils import timezone
+        import datetime
+        # Combina fecha y hora de la reserva
+        reserva_naive = datetime.datetime.combine(self.fecha, self.hora)
+        # Asegurarse de que esté en formato de zona horaria si Django las usa
+        try:
+            reserva_dt = timezone.make_aware(reserva_naive)
+        except ValueError: # Ya puede ser aware, aunque es raro en combine
+            reserva_dt = reserva_naive
+            
+        time_difference = reserva_dt - timezone.now()
+        return time_difference.total_seconds() >= 24 * 3600
 
     def __str__(self):
         return f"Reserva {self.id} - {self.cancha.nombre} ({self.fecha})"
