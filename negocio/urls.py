@@ -11,4 +11,7 @@ urlpatterns = [
     path('aprobar-torneo/<int:torneo_id>/', views.AprobarTorneoView.as_view(), name='aprobar_torneo'),
     path('mis-reservas/', views.PanelReservasView.as_view(), name='panel_reservas'),
     path('reservar/<int:reserva_id>/pagar', views.SimularPagoView.as_view(), name='simular_pago'),
+    path('torneos/<int:pk>/', views.TorneoDetalleView.as_view(), name='torneo_detalle'),
+    path('torneos/<int:pk>/generar-fixture/', views.GenerarFixtureView.as_view(), name='generar_fixture'),
+    path('partidos/<int:pk>/resultado/', views.RegistrarResultadoView.as_view(), name='registrar_resultado'),
 ]

@@ -13,15 +13,7 @@
             </p>
         </div>
 
-        {% if messages %}
-            <div class="mb-6 space-y-2">
-                {% for message in messages %}
-                    <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-900/40 text-red-400 border border-red-800{% else %}bg-green-900/40 text-green-400 border border-green-800{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+
 
         <form method="POST" action="{% url 'negocio:crear_reserva' cancha.id %}" class="space-y-6">
             {% csrf_token %}

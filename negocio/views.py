@@ -6,7 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from core.mixins import RoleRequiredMixin
 from django.contrib import messages
 from canchas.models import Cancha
-from .models import Reserva, Factura, Torneo, Equipo
+from .models import Reserva, Factura, Torneo, Equipo, Partido, PosicionEquipo
+from .services import generar_fixture_liga, registrar_resultado
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import user_passes_test
 from django.utils.decorators import method_decorator
@@ -58,7 +59,7 @@ class CrearReservaView(RoleRequiredMixin, View):
             return render(request, 'crear_reserva.html', {'cancha': cancha})
 
         reserva = Reserva(usuario=request.user, cancha=cancha, fecha=fecha, hora=hora)
-        
+
         try:
             reserva.full_clean()
             reserva.save()
@@ -163,12 +164,12 @@ class PanelReservasView(RoleRequiredMixin, View):
     def get(self, request):
         canchas_dueño = Cancha.objects.filter(dueño=request.user)
         reservas = Reserva.objects.filter(cancha__in=canchas_dueño).order_by('-fecha', '-hora')
-        
+
         # Filtros
         estado_filter = request.GET.get('estado')
         if estado_filter:
             reservas = reservas.filter(estado=estado_filter)
-            
+
         fecha_filter = request.GET.get('fecha')
         if fecha_filter:
             reservas = reservas.filter(fecha=fecha_filter)
@@ -194,7 +195,7 @@ class SimularPagoView(LoginRequiredMixin, View):
         if reserva.pagado:
             messages.warning(request, 'Esta reserva ya se encuentra pagada.')
             return redirect('dashboard')
-            
+
         if reserva.estado != 'PROGRAMADA':
             messages.error(request, 'Solo las reservas programadas pueden ser pagadas.')
             return redirect('dashboard')
@@ -202,6 +203,146 @@ class SimularPagoView(LoginRequiredMixin, View):
         # Simular pago exitoso
         reserva.pagado = True
         reserva.save()
-        
+
         messages.success(request, '¡El pago ha sido procesado exitosamente!')
         return redirect('negocio:factura_detalle', factura_id=reserva.factura.id)
+
+class TorneoDetalleView(LoginRequiredMixin, View):
+    """Vista pública para ver el detalle de un torneo, tabla de posiciones y fixture.
+
+    Muestra:
+        - Información del torneo (nombre, descripción, formato, estado)
+        - Tabla de posiciones (PJ, PG, PE, PP, GF, GC, Pts)
+        - Fixture agrupado por jornadas con resultados
+        - Botón para generar fixture (solo organizador, si no está generado)
+        - Formulario modal para registrar resultados (solo organizador)
+
+    Atributos:
+        model: Torneo
+        template_name: negocio/torneo_detalle.html
+
+    Flujo:
+        GET /torneos/<id>/ → carga torneo, posiciones, partidos agrupados por jornada
+    """
+
+    def get(self, request, pk):
+        """Renderiza detalle del torneo con tabla de posiciones y fixture.
+
+        Args:
+            request: HttpRequest del usuario
+            pk: ID del torneo
+
+        Returns:
+            HttpResponse con template torneo_detalle.html
+        """
+        torneo = get_object_or_404(Torneo, id=pk)
+        posiciones = PosicionEquipo.objects.filter(torneo=torneo)
+        partidos = Partido.objects.filter(torneo=torneo)
+
+        # Agrupar partidos por jornada para el template
+        jornadas = {}
+        for partido in partidos:
+            jornadas.setdefault(partido.jornada, []).append(partido)
+
+        return render(request, 'negocio/torneo_detalle.html', {
+            'torneo': torneo,
+            'posiciones': posiciones,
+            'jornadas': sorted(jornadas.items())
+        })
+
+
+class GenerarFixtureView(LoginRequiredMixin, View):
+    """Vista para generar el fixture de un torneo (solo organizador).
+
+    Genera el calendario de partidos usando algoritmo Round-Robin para formato LIGA.
+    También inicializa la tabla de posiciones de todos los equipos.
+
+    Validaciones:
+        - Solo el organizador puede generar fixture
+        - Se necesitan al menos 2 equipos inscritos
+        - El fixture no puede ser generado dos veces
+        - Solo funciona para formato LIGA
+
+    Atributos:
+        required_permission: organizador del torneo
+
+    Flujo:
+        POST /torneos/<id>/generar-fixture/ → genera fixture y redirige a detalle
+    """
+
+    def post(self, request, pk):
+        """Genera el fixture del torneo válido con todo chequeo.
+
+        Args:
+            request: HttpRequest del usuario
+            pk: ID del torneo
+
+        Returns:
+            Redirect a torneo_detalle con mensaje de exito o error
+        """
+        torneo = get_object_or_404(Torneo, id=pk)
+
+        if request.user != torneo.organizador:
+            messages.error(request, 'Solo el organizador puede generar el fixture.')
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
+
+        try:
+            generar_fixture_liga(torneo)
+            messages.success(request, '✅ Fixture generado exitosamente. Los partidos están listos para comenzar.')
+        except ValidationError as e:
+            messages.error(request, f'❌ Error: {e.message}')
+
+        return redirect('negocio:torneo_detalle', pk=torneo.id)
+
+
+class RegistrarResultadoView(LoginRequiredMixin, View):
+    """Vista para registrar un resultado de partido (solo organizador del torneo).
+
+    Registra los goles de ambos equipos y dispara la actualización automática
+    de la tabla de posiciones.
+
+    Validaciones:
+        - Solo el organizador del torneo puede registrar
+        - El partido no puede tener resultado registrado dos veces
+        - Los goles deben ser números enteros no negativos
+
+    Atributos:
+        required_permission: organizador del torneo
+
+    Flujo:
+        POST /partidos/<id>/resultado/
+            - goles_local (int): goles del equipo local
+            - goles_visitante (int): goles del equipo visitante
+        → actualiza Partido, Table de Posiciones, redirige a torneo_detalle
+    """
+
+    def post(self, request, pk):
+        """Registra resultados del partido y actualiza tabla de posiciones.
+
+        Args:
+            request: HttpRequest con POST parameters:
+                - goles_local: int >= 0
+                - goles_visitante: int >= 0
+            pk: ID del partido
+
+        Returns:
+            Redirect a torneo_detalle con mensaje de éxito o error
+        """
+        partido = get_object_or_404(Partido, id=pk)
+
+        goles_local = request.POST.get('goles_local')
+        goles_visitante = request.POST.get('goles_visitante')
+
+        if not (goles_local and goles_visitante):
+            messages.error(request, '❌ Debe especificar los goles de ambos equipos.')
+            return redirect('negocio:torneo_detalle', pk=partido.torneo.id)
+
+        try:
+            registrar_resultado(partido, int(goles_local), int(goles_visitante), request.user)
+            messages.success(request, f'✅ Resultado registrado: {partido.equipo_local.nombre} {goles_local}-{goles_visitante} {partido.equipo_visitante.nombre}. Tabla actualizada.')
+        except ValidationError as e:
+            messages.error(request, f'❌ Error: {e.message}')
+        except ValueError:
+            messages.error(request, '❌ Los goles deben ser números enteros.')
+
+        return redirect('negocio:torneo_detalle', pk=partido.torneo.id)

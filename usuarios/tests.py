@@ -170,7 +170,15 @@ class PasswordResetFlowTest(TestCase):
 
 
 class PerfilUpdateViewTest(TestCase):
-    """Tests para asegurar que la vista de actualización de perfil funcione correctamente."""
+    """Tests para asegurar que la vista de actualización de perfil funcione correctamente.
+
+    Valida:
+    - Requiere autenticación
+    - GET muestra datos actuales
+    - POST exitoso actualiza datos
+    - Email duplicado con otro usuario falla
+    - Email propio se puede mantener
+    """
     def setUp(self):
         self.client = Client()
         self.usuario = CustomUser.objects.create_user(
@@ -189,16 +197,21 @@ class PerfilUpdateViewTest(TestCase):
         self.url = reverse('usuarios:perfil')
 
     def test_perfil_requiere_login(self):
+        """Edge: acceso sin login redirige a login."""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url.lower())
 
     def test_perfil_get(self):
+        """GET carga el perfil actual con datos precargados."""
         self.client.login(username='perfil_user', password='ClaveSegura123!')
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Original')
+        self.assertContains(response, 'perfil@test.com')
 
     def test_perfil_post_exitoso(self):
+        """POST exitoso actualiza datos y redirige."""
         self.client.login(username='perfil_user', password='ClaveSegura123!')
         response = self.client.post(self.url, {
             'first_name': 'Nuevo',
@@ -208,9 +221,11 @@ class PerfilUpdateViewTest(TestCase):
         self.assertRedirects(response, self.url)
         self.usuario.refresh_from_db()
         self.assertEqual(self.usuario.first_name, 'Nuevo')
+        self.assertEqual(self.usuario.last_name, 'Nombre')
         self.assertEqual(self.usuario.email, 'nuevo@test.com')
 
-    def test_perfil_email_duplicado(self):
+    def test_perfil_email_duplicado_otro_usuario(self):
+        """Edge: no se puede usar email de otro usuario."""
         self.client.login(username='perfil_user', password='ClaveSegura123!')
         response = self.client.post(self.url, {
             'first_name': 'Nuevo',
@@ -219,10 +234,33 @@ class PerfilUpdateViewTest(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Este correo ya está en uso por otra cuenta.')
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.email, 'perfil@test.com')  # No cambió
+
+    def test_perfil_puede_mantener_mismo_email(self):
+        """Edge: se puede guardar con el mismo email."""
+        self.client.login(username='perfil_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'first_name': 'Otro',
+            'last_name': 'Nombre',
+            'email': 'perfil@test.com'  # Su propio email
+        })
+        self.assertRedirects(response, self.url)
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.first_name, 'Otro')
+        self.assertEqual(self.usuario.email, 'perfil@test.com')
 
 
 class CustomPasswordChangeViewTest(TestCase):
-    """Tests para el cambio de contraseñas de sesión activa."""
+    """Tests para el cambio de contraseñas de sesión activa.
+
+    Valida:
+    - Requiere autenticación
+    - GET retorna formulario
+    - POST exitoso cambia contraseña
+    - Contraseña anterior incorrecta falla
+    - Confirmación no coincidente falla
+    """
     def setUp(self):
         self.client = Client()
         self.usuario = CustomUser.objects.create_user(
@@ -232,15 +270,20 @@ class CustomPasswordChangeViewTest(TestCase):
         self.url = reverse('usuarios:cambiar_password')
 
     def test_password_change_requiere_login(self):
+        """Edge: acceso sin login redirige a login."""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url.lower())
 
     def test_password_change_get(self):
+        """GET carga el formulario correctamente."""
         self.client.login(username='pass_user', password='ClaveSegura123!')
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Cambiar Contraseña')
 
     def test_password_change_post_exitoso(self):
+        """POST exitoso cambia contraseña y redirige."""
         self.client.login(username='pass_user', password='ClaveSegura123!')
         response = self.client.post(self.url, {
             'old_password': 'ClaveSegura123!',
@@ -250,3 +293,28 @@ class CustomPasswordChangeViewTest(TestCase):
         self.assertRedirects(response, reverse('usuarios:perfil'))
         self.usuario.refresh_from_db()
         self.assertTrue(self.usuario.check_password('NuevaClave456!'))
+
+    def test_password_change_clave_anterior_incorrecta(self):
+        """Edge: contraseña anterior incorrecta no cambia contraseña."""
+        self.client.login(username='pass_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'old_password': 'ClaveIncorrecta!',
+            'new_password1': 'NuevaClave456!',
+            'new_password2': 'NuevaClave456!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'incorrect')
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('ClaveSegura123!'))
+
+    def test_password_change_confirmacion_no_coincide(self):
+        """Edge: confirmación distinta no cambia contraseña."""
+        self.client.login(username='pass_user', password='ClaveSegura123!')
+        response = self.client.post(self.url, {
+            'old_password': 'ClaveSegura123!',
+            'new_password1': 'NuevaClave456!',
+            'new_password2': 'OtraDistinta789!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('ClaveSegura123!'))

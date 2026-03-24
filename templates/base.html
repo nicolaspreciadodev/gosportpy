@@ -48,6 +48,33 @@
         </div>
     </aside>
 
+    <!-- Global Toast Notifications -->
+    {% if messages %}
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3">
+        {% for message in messages %}
+        <div class="toast-message flex items-center p-4 rounded-xl shadow-lg transform transition-all duration-300 translate-x-0 opacity-100 {% if message.tags == 'error' %}bg-red-900 border border-red-500 text-white{% elif message.tags == 'success' %}bg-green-900 border border-green-500 text-white{% else %}bg-gray-800 border border-gray-600 text-white{% endif %}" role="alert">
+            <div class="ms-3 text-sm font-normal">{{ message }}</div>
+            <button type="button" class="ms-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-white/20 transition" onclick="this.parentElement.remove();" aria-label="Close">
+                <span class="sr-only">Close</span>
+                <svg class="w-3 h-3 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        // Auto-dismiss toasts after 5 seconds
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(toast => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            });
+        }, 5000);
+    </script>
+    {% endif %}
+
     <!-- Main Content -->
     <main class="flex-1 flex flex-col relative overflow-hidden">
         <!-- Background Accents -->

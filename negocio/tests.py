@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from usuarios.models import CustomUser
 from canchas.models import Cancha, Deporte
-from negocio.models import Reserva, Factura
+from negocio.models import Reserva, Factura, Torneo, Equipo, Partido, PosicionEquipo
 import datetime
 
 
@@ -92,7 +92,7 @@ class CancelarReservaViewTest(TestCase):
     def setUp(self):
         from datetime import timedelta
         from django.utils import timezone
-        
+
         self.client = Client()
         self.deporte = Deporte.objects.create(nombre='Fútbol')
 
@@ -106,7 +106,7 @@ class CancelarReservaViewTest(TestCase):
             nombre='Cancha Test CX', precio=80.00,
             ubicacion='Centro', dueño=self.dueño, deporte=self.deporte
         )
-        
+
         # Una reserva a 3 días (puede cancelar)
         future_dt = timezone.now() + timedelta(days=3)
         self.reserva_lejos = Reserva.objects.create(
@@ -145,7 +145,7 @@ class InscribirEquipoViewTest(TestCase):
     def setUp(self):
         from datetime import date
         from negocio.models import Torneo, Equipo
-        
+
         self.client = Client()
         self.deporte = Deporte.objects.create(nombre='Basketball')
 
@@ -158,7 +158,7 @@ class InscribirEquipoViewTest(TestCase):
         self.deportista2 = CustomUser.objects.create_user(
             username='jugador2', password='123', rol='DEPORTISTA'
         )
-        
+
         self.torneo = Torneo.objects.create(
             nombre='Copa Primavera',
             estado='PUBLICADO',
@@ -210,7 +210,7 @@ class PanelReservasViewTest(TestCase):
         from datetime import date, time
         self.client = Client()
         self.deporte = Deporte.objects.create(nombre='Tenis')
-        
+
         self.dueño1 = CustomUser.objects.create_user(username='d1', password='123', rol='DUEÑO')
         self.dueño2 = CustomUser.objects.create_user(username='d2', password='123', rol='DUEÑO')
         self.deportista = CustomUser.objects.create_user(username='dep', password='123', rol='DEPORTISTA')
@@ -282,7 +282,7 @@ class SimularPagoViewTest(TestCase):
         self.client.login(username='dep1', password='123')
         response = self.client.post(self.url)
         self.reserva.refresh_from_db()
-        
+
         self.assertTrue(self.reserva.pagado)
         self.assertRedirects(response, reverse('negocio:factura_detalle', args=[self.reserva.factura.id]))
 
@@ -291,7 +291,7 @@ class SimularPagoViewTest(TestCase):
         self.client.login(username='dep2', password='123')
         response = self.client.post(self.url)
         self.reserva.refresh_from_db()
-        
+
         self.assertFalse(self.reserva.pagado)
         self.assertRedirects(response, reverse('dashboard'))
 
@@ -302,7 +302,231 @@ class SimularPagoViewTest(TestCase):
 
         self.client.login(username='dep1', password='123')
         response = self.client.post(self.url)
-        
+
         self.reserva.refresh_from_db()
         self.assertFalse(self.reserva.pagado)
         self.assertRedirects(response, reverse('dashboard'))
+
+# ===== FASE 10 — SISTEMA DE LIGA COMPLETO =====
+
+class GenerarFixtureTest(TestCase):
+    """Tests para la generación de fixture con algoritmo Round-Robin.
+
+    Valida:
+    - Fixture se genera solo con 2+ equipos
+    - Solo organizador puede generar
+    - Fixture no se puede generar dos veces
+    - Tabla de posiciones se inicia en ceros
+    - Número correcto de jornadas y partidos
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.deporte = Deporte.objects.create(nombre='Fútbol')
+        self.cancha = Cancha.objects.create(
+            nombre='Cancha Test', precio=80.00,
+            ubicacion='Centro', dueño=CustomUser.objects.create_user(
+                username='dueño_lig', password='pass', rol='DUEÑO'
+            ), deporte=self.deporte
+        )
+
+        self.organizador = CustomUser.objects.create_user(
+            username='org_lig', password='pass', rol='DEPORTISTA'
+        )
+        self.no_organizador = CustomUser.objects.create_user(
+            username='otro_lig', password='pass', rol='DEPORTISTA'
+        )
+
+        self.torneo = Torneo.objects.create(
+            nombre='Liga Test',
+            organizador=self.organizador,
+            formato='LIGA',
+            max_equipos=4,
+            deporte=self.deporte
+        )
+
+        # Crear 4 equipos
+        self.equipos = []
+        for i in range(4):
+            equipo = Equipo.objects.create(nombre=f'Equipo {i+1}')
+            equipo.jugadores.add(self.organizador)
+            self.torneo.equipos.add(equipo)
+            self.equipos.append(equipo)
+
+    def test_generar_fixture_exitoso(self):
+        """Fixture se genera correctamente con 4 equipos."""
+        self.client.login(username='org_lig', password='pass')
+        response = self.client.post(
+            reverse('negocio:generar_fixture', args=[self.torneo.id])
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[self.torneo.id]))
+        self.torneo.refresh_from_db()
+        self.assertTrue(self.torneo.fixture_generado)
+
+        # Verificar número de partidos: 4 equipos → 3 jornadas, 6 partidos
+        partidos = Partido.objects.filter(torneo=self.torneo)
+        self.assertEqual(partidos.count(), 6)  # 4 equipos: (4-1)*4/2 = 6
+
+    def test_generar_fixture_solo_organizador(self):
+        """Solo el organizador puede generar fixture."""
+        self.client.login(username='otro_lig', password='pass')
+        response = self.client.post(
+            reverse('negocio:generar_fixture', args=[self.torneo.id])
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[self.torneo.id]))
+        self.torneo.refresh_from_db()
+        self.assertFalse(self.torneo.fixture_generado)
+
+    def test_generar_fixture_sin_equipos(self):
+        """No se puede generar fixture sin al menos 2 equipos."""
+        torneo_vacio = Torneo.objects.create(
+            nombre='Torneo Vacío',
+            organizador=self.organizador,
+            formato='LIGA'
+        )
+
+        self.client.login(username='org_lig', password='pass')
+        response = self.client.post(
+            reverse('negocio:generar_fixture', args=[torneo_vacio.id])
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[torneo_vacio.id]))
+        torneo_vacio.refresh_from_db()
+        self.assertFalse(torneo_vacio.fixture_generado)
+
+    def test_posiciones_inicializadas_en_cero(self):
+        """La tabla de posiciones se inicializa correctamente."""
+        self.client.login(username='org_lig', password='pass')
+        self.client.post(reverse('negocio:generar_fixture', args=[self.torneo.id]))
+
+        posiciones = PosicionEquipo.objects.filter(torneo=self.torneo)
+        self.assertEqual(posiciones.count(), 4)
+
+        for posicion in posiciones:
+            self.assertEqual(posicion.puntos, 0)
+            self.assertEqual(posicion.partidos_jugados, 0)
+            self.assertEqual(posicion.goles_favor, 0)
+
+
+class RegistrarResultadoTest(TestCase):
+    """Tests para registro de resultados y actualización de tabla.
+
+    Valida:
+    - Resultado se registra correctamente
+    - Tabla de posiciones se actualiza (puntos, goles, PJ, etc.)
+    - Algoritmo ganador (3pts), empate (1pt), perdedor (0pts)
+    - Solo organizador puede registrar
+    - No se puede registrar dos veces el mismo partido
+    """
+
+    def setUp(self):
+        from negocio.services import generar_fixture_liga
+
+        self.client = Client()
+        self.deporte = Deporte.objects.create(nombre='Fútbol')
+        self.cancha = Cancha.objects.create(
+            nombre='Cancha Test', precio=80.00,
+            ubicacion='Centro', dueño=CustomUser.objects.create_user(
+                username='dueño_res', password='pass', rol='DUEÑO'
+            ), deporte=self.deporte
+        )
+
+        self.organizador = CustomUser.objects.create_user(
+            username='org_res', password='pass', rol='DEPORTISTA'
+        )
+
+        self.torneo = Torneo.objects.create(
+            nombre='Liga Resultados',
+            organizador=self.organizador,
+            formato='LIGA',
+            max_equipos=2,
+            deporte=self.deporte
+        )
+
+        # 2 equipos
+        self.equipo_a = Equipo.objects.create(nombre='Equipo A')
+        self.equipo_b = Equipo.objects.create(nombre='Equipo B')
+        self.torneo.equipos.add(self.equipo_a)
+        self.torneo.equipos.add(self.equipo_b)
+
+        # Generar fixture
+        generar_fixture_liga(self.torneo)
+        self.partido = Partido.objects.filter(torneo=self.torneo).first()
+
+    def test_registrar_resultado_ganador(self):
+        """Registrar resultado con ganador actualiza puntos correctamente."""
+        self.client.login(username='org_res', password='pass')
+        response = self.client.post(
+            reverse('negocio:registrar_resultado', args=[self.partido.id]),
+            {'goles_local': 3, 'goles_visitante': 1}
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[self.torneo.id]))
+
+        self.partido.refresh_from_db()
+        self.assertEqual(self.partido.goles_local, 3)
+        self.assertEqual(self.partido.goles_visitante, 1)
+        self.assertEqual(self.partido.estado, 'JUGADO')
+
+        # Verificar puntos
+        pos_local = PosicionEquipo.objects.get(torneo=self.torneo, equipo=self.equipo_a)
+        pos_visitante = PosicionEquipo.objects.get(torneo=self.torneo, equipo=self.equipo_b)
+
+        self.assertEqual(pos_local.puntos, 3)  # Ganó
+        self.assertEqual(pos_visitante.puntos, 0)  # Perdió
+
+    def test_registrar_resultado_empate(self):
+        """Registrar empate da 1 punto a cada equipo."""
+        self.client.login(username='org_res', password='pass')
+        response = self.client.post(
+            reverse('negocio:registrar_resultado', args=[self.partido.id]),
+            {'goles_local': 2, 'goles_visitante': 2}
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[self.torneo.id]))
+
+        pos_local = PosicionEquipo.objects.get(torneo=self.torneo, equipo=self.equipo_a)
+        pos_visitante = PosicionEquipo.objects.get(torneo=self.torneo, equipo=self.equipo_b)
+
+        self.assertEqual(pos_local.puntos, 1)
+        self.assertEqual(pos_visitante.puntos, 1)
+
+    def test_solo_organizador_puede_registrar(self):
+        """Edge: otro usuario no puede registrar resultado."""
+        otro_usuario = CustomUser.objects.create_user(
+            username='otro_res', password='pass'
+        )
+
+        self.client.login(username='otro_res', password='pass')
+        response = self.client.post(
+            reverse('negocio:registrar_resultado', args=[self.partido.id]),
+            {'goles_local': 3, 'goles_visitante': 1}
+        )
+
+        self.assertRedirects(response, reverse('negocio:torneo_detalle', args=[self.torneo.id]))
+
+        self.partido.refresh_from_db()
+        self.assertEqual(self.partido.estado, 'PENDIENTE')
+
+    def test_no_puede_registrar_dos_veces(self):
+        """Edge: no se puede registrar resultado dos veces."""
+        self.client.login(username='org_res', password='pass')
+
+        # Primer registro
+        self.client.post(
+            reverse('negocio:registrar_resultado', args=[self.partido.id]),
+            {'goles_local': 3, 'goles_visitante': 1}
+        )
+
+        # Segundo intento
+        response = self.client.post(
+            reverse('negocio:registrar_resultado', args=[self.partido.id]),
+            {'goles_local': 5, 'goles_visitante': 0}
+        )
+
+        # Los goles no deben cambiar
+        self.partido.refresh_from_db()
+        self.assertEqual(self.partido.goles_local, 3)
+        self.assertEqual(self.partido.goles_visitante, 1)

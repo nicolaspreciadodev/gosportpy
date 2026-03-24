@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<div class="max-w-7xl">
+    <!-- Header del Torneo -->
+    <div class="bg-card border border-gray-800 rounded-xl p-6 mb-8">
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">{{ torneo.nombre }}</h1>
+                <p class="text-gray-400">{{ torneo.descripcion }}</p>
+            </div>
+            <div class="text-right">
+                <span class="inline-block px-3 py-2 bg-neon/10 border border-neon text-neon rounded-lg font-medium">
+                    {{ torneo.get_estado_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Info del Torneo -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Deporte</p>
+                <p class="text-white font-semibold">{{ torneo.deporte.nombre|default:"Sin especificar" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Formato</p>
+                <p class="text-white font-semibold">{{ torneo.get_formato_display }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Equipos Inscritos</p>
+                <p class="text-white font-semibold">{{ torneo.equipos.count }}/{{ torneo.max_equipos }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Organizador</p>
+                <p class="text-white font-semibold">{{ torneo.organizador.first_name|default:torneo.organizador.username }}</p>
+            </div>
+        </div>
+
+        <!-- Botones de Acción (solo para organizador) -->
+        {% if request.user == torneo.organizador %}
+        <div class="flex gap-3 flex-wrap">
+            {% if not torneo.fixture_generado and torneo.equipos.count >= 2 %}
+            <form method="POST" action="{% url 'negocio:generar_fixture' torneo.id %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-neon text-dark font-semibold rounded-lg hover:bg-neon/80 transition">
+                    <i data-lucide="zap" style="width:18px;height:18px;"></i>
+                    Generar Fixture
+                </button>
+            </form>
+            {% elif torneo.fixture_generado %}
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 border border-green-500 text-green-400 rounded-lg">
+                <i data-lucide="check" style="width:18px;height:18px;"></i>
+                Fixture Generado
+            </div>
+            {% elif torneo.equipos.count < 2 %}
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">
+                <i data-lucide="alert-circle" style="width:18px;height:18px;"></i>
+                Se necesitan al menos 2 equipos
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabla de Posiciones -->
+    <div class="bg-card border border-gray-800 rounded-xl p-6 mb-8">
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <i data-lucide="trophy" class="w-6 h-6 text-neon"></i>
+            Tabla de Posiciones
+        </h2>
+
+        {% if posiciones|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-gray-700">
+                    <tr class="text-gray-400">
+                        <th class="text-left py-3 px-4 font-semibold">Pos</th>
+                        <th class="text-left py-3 px-4 font-semibold">Equipo</th>
+                        <th class="text-center py-3 px-4 font-semibold">PJ</th>
+                        <th class="text-center py-3 px-4 font-semibold">PG</th>
+                        <th class="text-center py-3 px-4 font-semibold">PE</th>
+                        <th class="text-center py-3 px-4 font-semibold">PP</th>
+                        <th class="text-center py-3 px-4 font-semibold">GF</th>
+                        <th class="text-center py-3 px-4 font-semibold">GC</th>
+                        <th class="text-center py-3 px-4 font-semibold">DG</th>
+                        <th class="text-right py-3 px-4 font-semibold text-neon">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pos in posiciones %}
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-800/30 transition">
+                        <td class="py-4 px-4 text-gray-400">{% forloop.counter }}</td>
+                        <td class="py-4 px-4 font-semibold text-white">{{ pos.equipo.nombre }}</td>
+                        <td class="py-4 px-4 text-center text-gray-300">{{ pos.partidos_jugados }}</td>
+                        <td class="py-4 px-4 text-center text-green-400">{{ pos.partidos_ganados }}</td>
+                        <td class="py-4 px-4 text-center text-yellow-400">{{ pos.partidos_empatados }}</td>
+                        <td class="py-4 px-4 text-center text-red-400">{{ pos.partidos_perdidos }}</td>
+                        <td class="py-4 px-4 text-center text-gray-300">{{ pos.goles_favor }}</td>
+                        <td class="py-4 px-4 text-center text-gray-300">{{ pos.goles_contra }}</td>
+                        <td class="py-4 px-4 text-center text-gray-300">
+                            {% if pos.diferencia_goles > 0 %}
+                                <span class="text-green-400">+{{ pos.diferencia_goles }}</span>
+                            {% elif pos.diferencia_goles < 0 %}
+                                <span class="text-red-400">{{ pos.diferencia_goles }}</span>
+                            {% else %}
+                                <span class="text-gray-400">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 text-right font-bold text-neon">{{ pos.puntos }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i data-lucide="inbox" class="w-12 h-12 text-gray-600 mx-auto mb-3"></i>
+            <p class="text-gray-400">No hay equipos aún. Espera a que se inscriban.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Fixture / Calendario de Partidos -->
+    {% if torneo.fixture_generado %}
+    <div class="bg-card border border-gray-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <i data-lucide="calendar" class="w-6 h-6 text-neon"></i>
+            Fixture - Calendario de Partidos
+        </h2>
+
+        {% if jornadas|length > 0 %}
+        <div class="space-y-6">
+            {% for jornada, partidos in jornadas %}
+            <div class="border border-gray-700 rounded-lg overflow-hidden">
+                <div class="bg-gray-800/50 px-4 py-3 border-b border-gray-700">
+                    <h3 class="text-lg font-semibold text-neon">Jornada {{ jornada }}</h3>
+                </div>
+
+                <div class="divide-y divide-gray-700">
+                    {% for partido in partidos %}
+                    <div class="p-4 hover:bg-gray-800/20 transition">
+                        <div class="flex items-center justify-between gap-4 mb-3">
+                            <!-- Local vs Visitante -->
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-white max-w-xs truncate">{{ partido.equipo_local.nombre }}</span>
+                                    {% if partido.estado == 'JUGADO' %}
+                                    <span class="text-neon font-bold text-xl">{{ partido.goles_local }}</span>
+                                    {% else %}
+                                    <span class="text-gray-500">-</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-white max-w-xs truncate">{{ partido.equipo_visitante.nombre }}</span>
+                                    {% if partido.estado == 'JUGADO' %}
+                                    <span class="text-neon font-bold text-xl">{{ partido.goles_visitante }}</span>
+                                    {% else %}
+                                    <span class="text-gray-500">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Estado del Partido -->
+                            <div class="text-center">
+                                {% if partido.estado == 'JUGADO' %}
+                                <span class="inline-block px-3 py-1 bg-green-900/30 border border-green-500 text-green-400 text-xs font-semibold rounded">
+                                    JUGADO
+                                </span>
+                                {% else %}
+                                <span class="inline-block px-3 py-1 bg-gray-700/50 border border-gray-600 text-gray-400 text-xs font-semibold rounded">
+                                    PENDIENTE
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botón registrar resultado (solo organizador, si está pendiente) -->
+                        {% if request.user == torneo.organizador and partido.estado == 'PENDIENTE' %}
+                        <button
+                            onclick="mostrarFormularioResultado({{ partido.id }}, '{{ partido.equipo_local.nombre }}', '{{ partido.equipo_visitante.nombre }}')"
+                            class="w-full mt-3 px-3 py-2 bg-neon/10 border border-neon text-neon font-medium rounded hover:bg-neon/20 transition text-sm flex items-center justify-center gap-2"
+                        >
+                            <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                            Registrar Resultado
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="text-center py-12">
+            <i data-lucide="inbox" class="w-12 h-12 text-gray-600 mx-auto mb-3"></i>
+            <p class="text-gray-400">No hay partidos programados aún.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Registrar Resultado -->
+<div id="modal-resultado" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-card border border-gray-800 rounded-xl p-6 max-w-md w-full">
+        <h3 class="text-xl font-bold text-white mb-6" id="modal-titulo">Registrar Resultado</h3>
+
+        <form id="form-resultado" method="POST">
+            {% csrf_token %}
+
+            <input type="hidden" id="partido-id" name="partido_id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2" id="label-local">Local - Goles</label>
+                    <input
+                        type="number"
+                        name="goles_local"
+                        min="0"
+                        value="0"
+                        class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-neon transition"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2" id="label-visitante">Visitante - Goles</label>
+                    <input
+                        type="number"
+                        name="goles_visitante"
+                        min="0"
+                        value="0"
+                        class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-neon transition"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="cerrarFormularioResultado()" class="flex-1 px-4 py-2 bg-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-600 transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-neon text-dark font-medium rounded-lg hover:bg-neon/80 transition">
+                    Guardar Resultado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function mostrarFormularioResultado(partidoId, local, visitante) {
+        document.getElementById('partido-id').value = partidoId;
+        document.getElementById('label-local').textContent = local + ' - Goles';
+        document.getElementById('label-visitante').textContent = visitante + ' - Goles';
+        document.getElementById('modal-resultado').classList.remove('hidden');
+        document.getElementById('modal-resultado').classList.add('flex');
+    }
+
+    function cerrarFormularioResultado() {
+        document.getElementById('modal-resultado').classList.add('hidden');
+        document.getElementById('modal-resultado').classList.remove('flex');
+    }
+
+    document.getElementById('form-resultado').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const partidoId = document.getElementById('partido-id').value;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            {% csrf_token %}
+            <input type="hidden" name="goles_local" value="${document.querySelector('input[name="goles_local"]').value}">
+            <input type="hidden" name="goles_visitante" value="${document.querySelector('input[name="goles_visitante"]').value}">
+        `;
+        form.action = `{% url 'negocio:registrar_resultado' 0 %}`.replace('/0/', '/' + partidoId + '/');
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    });
+
+    // Cerrar modal al presionar Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarFormularioResultado();
+        }
+    });
+</script>
+
+{% endblock content %}

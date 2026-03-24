@@ -6,14 +6,7 @@
 
 <div class="flex justify-center items-start mt-10 min-h-full">
     <div class="auth-card" style="margin:0; width:100%; max-width:500px">
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
-                <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px;flex-shrink:0;"></i>
-                {{ message }}
-            </div>
-            {% endfor %}
-        {% endif %}
+
 
         <h2 class="auth-title">Mi Perfil</h2>
         <p class="auth-subtitle">Actualiza tu información personal</p>

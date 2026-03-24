@@ -17,6 +17,15 @@ class Torneo(models.Model):
     is_approved = models.BooleanField(default=False)
     organizador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='torneos_organizados')
     
+    # Nuevos campos de Liga
+    max_equipos = models.PositiveIntegerField(default=8)
+    FORMATO_CHOICES = (
+        ('LIGA', 'Liga (Todos contra todos)'),
+        ('ELIMINACION', 'Eliminación Directa'),
+    )
+    formato = models.CharField(max_length=20, choices=FORMATO_CHOICES, default='LIGA')
+    fixture_generado = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"{self.nombre} ({self.get_estado_display()})"
 
@@ -85,3 +94,52 @@ class Equipo(models.Model):
     
     def __str__(self):
         return self.nombre
+
+class Partido(models.Model):
+    """
+    Representa un partido dentro de un torneo (especialmente formato Liga).
+    """
+    ESTADO_CHOICES = (
+        ('PENDIENTE', 'Pendiente'),
+        ('JUGADO', 'Jugado'),
+    )
+    torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='partidos')
+    equipo_local = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='partidos_local')
+    equipo_visitante = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='partidos_visitante')
+    goles_local = models.PositiveIntegerField(default=0)
+    goles_visitante = models.PositiveIntegerField(default=0)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
+    jornada = models.PositiveIntegerField()
+    cancha = models.ForeignKey(Cancha, on_delete=models.SET_NULL, null=True, blank=True, related_name='partidos')
+    fecha = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.equipo_local} vs {self.equipo_visitante} (Jornada {self.jornada})"
+
+    class Meta:
+        ordering = ['jornada', 'fecha']
+
+class PosicionEquipo(models.Model):
+    """
+    Tabla de posiciones para un equipo en un torneo de formato Liga.
+    """
+    torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='posiciones')
+    equipo = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='posiciones_torneo')
+    puntos = models.IntegerField(default=0)
+    partidos_jugados = models.PositiveIntegerField(default=0)
+    partidos_ganados = models.PositiveIntegerField(default=0)
+    partidos_empatados = models.PositiveIntegerField(default=0)
+    partidos_perdidos = models.PositiveIntegerField(default=0)
+    goles_favor = models.PositiveIntegerField(default=0)
+    goles_contra = models.PositiveIntegerField(default=0)
+    
+    @property
+    def diferencia_goles(self):
+        return self.goles_favor - self.goles_contra
+        
+    def __str__(self):
+        return f"{self.equipo.nombre} - {self.puntos} pts ({self.torneo.nombre})"
+        
+    class Meta:
+        ordering = ['-puntos', '-partidos_ganados', '-goles_favor']
+        unique_together = ('torneo', 'equipo')

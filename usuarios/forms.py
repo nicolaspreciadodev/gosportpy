@@ -55,11 +55,28 @@ class RegistroUsuarioForm(UserCreationForm):
 
 
 class PerfilForm(forms.ModelForm):
-    """Formulario para la edición del perfil de usuario expuesto."""
+    """Formulario para la edición del perfil de usuario expuesto.
 
-    first_name = forms.CharField(max_length=150, required=True, label='Nombre')
-    last_name = forms.CharField(max_length=150, required=True, label='Apellido')
-    email = forms.EmailField(required=True, label='Correo electrónico')
+    Permite editar: nombre, apellido, email (con validación de unicidad).
+    """
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label='Nombre',
+        widget=forms.TextInput(attrs={'class': 'form-input'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label='Apellido',
+        widget=forms.TextInput(attrs={'class': 'form-input'})
+    )
+    email = forms.EmailField(
+        required=True,
+        label='Correo electrónico',
+        widget=forms.EmailInput(attrs={'class': 'form-input'})
+    )
 
     class Meta:
         model = CustomUser
@@ -69,10 +86,14 @@ class PerfilForm(forms.ModelForm):
         """Valida que el nuevo email no pertenezca a OTRO usuario.
 
         Returns:
-            str: email validado.
+            str: email validado en minúsculas.
 
         Raises:
             ValidationError: Si el email ya está en uso por otra cuenta.
+
+        Notas:
+            - El usuario puede mantener su propio email
+            - Se normaliza a minúsculas para evitar duplicados por caso
         """
         email = self.cleaned_data.get('email', '').lower()
         if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():

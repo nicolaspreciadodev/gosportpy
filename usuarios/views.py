@@ -53,8 +53,28 @@ from django.contrib.messages.views import SuccessMessageMixin
 from .models import CustomUser
 from .forms import PerfilForm
 
+
 class PerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
-    """Permite al usuario actualizar sus datos básicos de perfil."""
+    """Vista para actualizar datos básicos del perfil de usuario.
+
+    Solo usuarios autenticados pueden acceder.
+    Permite editar: nombre, apellido, email.
+    Email debe ser único (no puede duplicarse con otro usuario).
+
+    Atributos:
+        model: CustomUser
+        form_class: PerfilForm
+        template_name: usuarios/perfil.html
+        success_url: redirige a la misma vista (actualización exitosa)
+        success_message: mensaje mostrado al usuario
+
+    Flujo:
+        GET  → muestra formulario con datos actuales del usuario
+        POST → valida y guarda cambios, redirige con mensaje exitoso
+
+    Raises:
+        PermissionDenied: si el usuario intenta acceder sin estar autenticado
+    """
     model = CustomUser
     form_class = PerfilForm
     template_name = 'usuarios/perfil.html'
@@ -62,11 +82,38 @@ class PerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_message = "Tu perfil ha sido actualizado exitosamente."
 
     def get_object(self, queryset=None):
+        """Retorna siempre el usuario autenticado actual.
+
+        Returns:
+            CustomUser: el usuario que realiza la petición
+        """
         return self.request.user
 
 
 class CustomPasswordChangeView(LoginRequiredMixin, SuccessMessageMixin, PasswordChangeView):
-    """Permite al usuario cambiar su contraseña conservando la sesión activa."""
+    """Vista para cambiar contraseña manteniendo la sesión activa.
+
+    Solo usuarios autenticados pueden acceder.
+    Requiere la contraseña anterior para validar la identidad del usuario.
+    Mantiene la sesión activa después del cambio.
+
+    Atributos:
+        template_name: usuarios/cambiar_password.html
+        success_url: redirige a perfil después del cambio exitoso
+        success_message: mensaje mostrado al usuario
+
+    Flujo:
+        GET  → muestra formulario con campos: contraseña actual, nueva, confirmación
+        POST → valida contraseña anterior y cambio exitoso, redirige con mensaje
+
+    Raises:
+        PermissionDenied: si el usuario intenta acceder sin estar autenticado
+
+    Diferencias con PasswordResetView:
+        - Se usa cuando el usuario RECUERDA su contraseña actual
+        - Requiere contraseña anterior como verificación de seguridad
+        - La sesión permanece activa (el usuario sigue "logueado")
+    """
     template_name = 'usuarios/cambiar_password.html'
     success_url = reverse_lazy('usuarios:perfil')
     success_message = "Tu contraseña ha sido cambiada exitosamente."

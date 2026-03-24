@@ -72,5 +72,119 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Ratings Section -->
+    <div class="bg-gray-900/50 border border-gray-800/80 rounded-2xl overflow-hidden">
+        <div class="p-8">
+            <!-- Average Rating Header -->
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-2xl font-bold text-white">Calificaciones</h3>
+                <div class="flex items-center gap-4">
+                    {% if cancha.promedio_calificacion %}
+                    <div class="text-right">
+                        <p class="text-4xl font-black text-neon">{{ cancha.promedio_calificacion|floatformat:1 }}</p>
+                        <p class="text-xs text-gray-500">{{ cancha.total_calificaciones }} valoración{{ cancha.total_calificaciones|pluralize }}</p>
+                    </div>
+                    <div class="flex gap-1">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= cancha.promedio_calificacion|floatformat:0 %}
+                            <span class="text-2xl">⭐</span>
+                            {% else %}
+                            <span class="text-2xl text-gray-700">☆</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-gray-400 italic">Sin calificaciones aún</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Rate Button (if user can rate) -->
+            {% if user.is_authenticated and user.rol == 'DEPORTISTA' %}
+                {% if puede_calificar %}
+                <div class="mb-6 p-4 bg-green-900/20 border border-green-800/60 rounded-xl">
+                    <form method="POST" action="{% url 'canchas:calificar' cancha.pk %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="text-sm text-gray-300 block mb-2">
+                                Puntuación (1-5 estrellas)
+                            </label>
+                            <div class="flex gap-3">
+                                {% for i in "12345" %}
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="puntuacion" value="{{ i }}" required
+                                           class="hidden peer">
+                                    <span class="text-4xl peer-checked:text-neon transition-colors
+                                               group-hover:text-yellow-400">
+                                        ★
+                                    </span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-300 block mb-2">
+                                Comentario (opcional)
+                            </label>
+                            <textarea name="comentario" placeholder="Cuéntanos tu experiencia..."
+                                      class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3
+                                             text-white placeholder-gray-500 focus:border-neon
+                                             focus:outline-none resize-none h-20"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-neon text-black font-bold rounded-xl
+                                                    hover:bg-green-300 transition">
+                            Enviar Calificación
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="mb-6 p-4 bg-yellow-900/20 border border-yellow-800/60 rounded-xl">
+                    <p class="text-yellow-400 text-sm">
+                        Para calificar esta cancha, primero debes completar una reserva.
+                    </p>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Ratings List -->
+            {% if calificaciones %}
+            <div class="space-y-4">
+                {% for rating in calificaciones %}
+                <div class="bg-black/30 p-4 rounded-lg border border-gray-800 hover:border-gray-700 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-white font-semibold">
+                                {{ rating.usuario.get_full_name|default:rating.usuario.username }}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                {{ rating.fecha_creacion|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                        <div class="flex gap-1">
+                            {% for i in "12345" %}
+                                {% if i|add:0 <= rating.puntuacion %}
+                                <span class="text-lg">⭐</span>
+                                {% else %}
+                                <span class="text-lg text-gray-700">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if rating.comentario %}
+                    <p class="text-gray-300 text-sm">{{ rating.comentario }}</p>
+                    {% else %}
+                    <p class="text-gray-500 text-sm italic">Sin comentario</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% elif cancha.total_calificaciones == 0 %}
+            <div class="text-center py-8 text-gray-400">
+                <p class="text-sm">Sé el primero en calificar esta cancha.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

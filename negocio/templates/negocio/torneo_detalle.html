@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto mt-10 space-y-8">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white">{{ torneo.nombre }}</h2>
+            <p class="text-gray-400 mt-1">Formato: {{ torneo.get_formato_display }} | Equipos: {{ posiciones.count }} / {{ torneo.max_equipos }}</p>
+        </div>
+        
+        {% if user == torneo.organizador and not torneo.fixture_generado %}
+        <form method="POST" action="{% url 'negocio:generar_fixture' torneo.id %}">
+            {% csrf_token %}
+            <button type="submit" class="bg-neon text-black font-bold py-2 px-6 rounded-lg hover:bg-green-400 transition shadow-[0_0_15px_rgba(0,255,136,0.2)] hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]">
+                Generar Fixture
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Tabla de Posiciones -->
+    <div class="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 relative overflow-hidden">
+        <h3 class="text-xl text-white font-semibold mb-4">Tabla de Posiciones</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-gray-300">
+                <thead class="bg-dark/80 text-gray-400 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Pos</th>
+                        <th class="px-4 py-3">Equipo</th>
+                        <th class="px-4 py-3 text-center">PTS</th>
+                        <th class="px-4 py-3 text-center">PJ</th>
+                        <th class="px-4 py-3 text-center">PG</th>
+                        <th class="px-4 py-3 text-center">PE</th>
+                        <th class="px-4 py-3 text-center">PP</th>
+                        <th class="px-4 py-3 text-center">GF</th>
+                        <th class="px-4 py-3 text-center">GC</th>
+                        <th class="px-4 py-3 text-center">DIF</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800">
+                    {% for pos in posiciones %}
+                    <tr class="hover:bg-gray-800/50 transition">
+                        <td class="px-4 py-3 font-bold">{{ forloop.counter }}</td>
+                        <td class="px-4 py-3 font-medium text-white">{{ pos.equipo.nombre }}</td>
+                        <td class="px-4 py-3 text-center font-bold text-neon">{{ pos.puntos }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.partidos_jugados }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.partidos_ganados }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.partidos_empatados }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.partidos_perdidos }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.goles_favor }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.goles_contra }}</td>
+                        <td class="px-4 py-3 text-center">{{ pos.diferencia_goles }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="px-4 py-8 text-center text-gray-500">No hay equipos suscritos a este torneo aún.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Fixture Completo -->
+    {% if torneo.fixture_generado %}
+    <div class="space-y-6">
+        <h3 class="text-xl text-white font-semibold">Fixture de Partidos</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for jornada_num, partidos_jornada in jornadas %}
+            <div class="bg-dark/50 p-6 rounded-2xl border border-gray-800">
+                <h4 class="text-neon font-bold mb-4 border-b border-gray-800 pb-2">Jornada {{ jornada_num }}</h4>
+                <div class="space-y-4">
+                    {% for partido in partidos_jornada %}
+                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800 flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">{{ partido.get_estado_display }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg">
+                            <span class="font-medium text-white text-right flex-1 truncate">{{ partido.equipo_local.nombre }}</span>
+                            <div class="px-4 flex gap-2 font-bold font-mono text-neon">
+                                <span>{{ partido.goles_local }}</span>
+                                <span class="text-gray-600">-</span>
+                                <span>{{ partido.goles_visitante }}</span>
+                            </div>
+                            <span class="font-medium text-white text-left flex-1 truncate">{{ partido.equipo_visitante.nombre }}</span>
+                        </div>
+                        
+                        {% if user == torneo.organizador and partido.estado == 'PENDIENTE' %}
+                        <form method="POST" action="{% url 'negocio:registrar_resultado' partido.id %}" class="flex gap-2 mt-2 pt-3 border-t border-gray-800">
+                            {% csrf_token %}
+                            <input type="number" name="goles_local" min="0" placeholder="L" required class="w-16 bg-dark border border-gray-700 rounded-lg px-2 py-1 text-white text-center focus:outline-none focus:border-neon">
+                            <input type="number" name="goles_visitante" min="0" placeholder="V" required class="w-16 bg-dark border border-gray-700 rounded-lg px-2 py-1 text-white text-center focus:outline-none focus:border-neon">
+                            <button type="submit" class="flex-1 bg-gray-800 text-white font-medium py-1 px-3 rounded-lg border border-gray-700 hover:border-neon hover:text-neon transition text-sm">Registrar</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
