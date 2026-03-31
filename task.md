@@ -121,17 +121,17 @@ Tests: 7 tests de CalificarCanchaViewTest — TODOS PASS ✓
 Database: Migration canchas.0004_calificacion aplicada ✓
 Cobertura total canchas: 28 tests PASS (122.192s) ✓
 
-⏳ Pendiente
+✅ Completado
 Fase 12 — Emails Reales (SMTP) ⭐ PRIORIDAD ALTA
 
-Configurar EMAIL_BACKEND con Gmail o SendGrid en settings.py
-Agregar variables EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD al .env
-Email: confirmación de reserva creada (con detalle de cancha, fecha y hora)
-Email: recordatorio 24h antes de la reserva (Django management command o Celery)
-Email: notificación al organizador cuando un equipo se inscribe a su torneo
-Email: notificación al deportista cuando su torneo es aprobado
-Template de email: HTML con estilo GoSport (logo + colores neon)
-Tests: verificar que los emails se envían con el contenido correcto
+  - [x] Configurar EMAIL_BACKEND con Gmail o SendGrid en settings.py
+  - [x] Agregar variables EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD al .env
+  - [x] Email: confirmación de reserva creada (con detalle de cancha, fecha y hora)
+  - [x] Email: recordatorio 24h antes de la reserva (Django management command o Celery)
+  - [x] Email: notificación al organizador cuando un equipo se inscribe a su torneo
+  - [x] Email: notificación al deportista cuando su torneo es aprobado
+  - [x] Template de email: HTML con estilo GoSport (logo + colores neon)
+  - [x] Tests: verificar que los emails se envían con el contenido correcto
 
 Fase 13 — Pasarela de Pagos Real
 

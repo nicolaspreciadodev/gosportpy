@@ -1,0 +1,18 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>¡Prepara tus zapatillas, {{ usuario.first_name }}! ⚡</h2>
+<p>Este es un recordatorio amistoso de que tu reserva está programada para <strong>mañana</strong>.</p>
+
+<div style="background-color: #374151; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <p><strong>🏟️ Cancha:</strong> {{ cancha.nombre }}</p>
+    <p><strong>📅 Fecha:</strong> {{ reserva.fecha|date:"d \d\e F, Y" }}</p>
+    <p><strong>⏰ Hora:</strong> {{ reserva.hora }}</p>
+</div>
+
+<p>Si por algún motivo no puedes asistir, recuerda que puedes cancelar con hasta 24 horas de anticipación desde tu panel para liberar el cupo.</p>
+
+<div style="text-align: center;">
+    <a href="#" class="button">Ir a GoSport</a>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Pago Pendiente - GoSport{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 p-8 bg-gray-800 rounded-xl shadow-2xl border border-yellow-500/30 text-center">
+    <div class="inline-flex items-center justify-center w-20 h-20 bg-yellow-500/20 rounded-full mb-6 text-yellow-500">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    
+    <h1 class="text-3xl font-black text-white mb-2">Pago en Revisión</h1>
+    <p class="text-gray-400 mb-8">Mercado Pago ha recibido la orden pero el banco aún está procesando la transacción. Recibirás una notificación cuando tu reserva esté definitivamente pagada.</p>
+    
+    <div class="flex justify-center gap-4">
+        <a href="{% url 'dashboard' %}" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-6 rounded transition-colors focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+            Entendido
+        </a>
+    </div>
+</div>
+{% endblock %}

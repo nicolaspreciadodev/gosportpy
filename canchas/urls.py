@@ -9,6 +9,7 @@ from .views import (
     GestionarDisponibilidadView,
     DisponibilidadSlotsView,
     CalificarCanchaView,
+    ReporteCanchasView,
 )
 
 app_name = 'canchas'
@@ -22,4 +23,5 @@ urlpatterns = [
     path('<int:pk>/disponibilidad/', GestionarDisponibilidadView.as_view(), name='disponibilidad'),
     path('<int:pk>/slots/', DisponibilidadSlotsView.as_view(), name='slots'),
     path('<int:pk>/calificar/', CalificarCanchaView.as_view(), name='calificar'),
+    path('reporte/', ReporteCanchasView.as_view(), name='reporte'),
 ]

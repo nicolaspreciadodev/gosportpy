@@ -2,6 +2,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from .models import Torneo, Equipo, Partido, PosicionEquipo
 
+from typing import List, Optional
+
 def inscribir_equipo_torneo(equipo: Equipo, torneo: Torneo) -> None:
     """
     Inscribe un equipo en un torneo, validando el límite máximo.
@@ -26,7 +28,7 @@ def generar_fixture_liga(torneo: Torneo) -> bool:
     if torneo.fixture_generado:
         raise ValidationError("El fixture ya ha sido generado para este torneo.")
         
-    equipos = list(torneo.equipos.all())
+    equipos: List[Optional[Equipo]] = list(torneo.equipos.all())
     num_equipos = len(equipos)
     
     if num_equipos < 2:
@@ -46,8 +48,8 @@ def generar_fixture_liga(torneo: Torneo) -> bool:
     
     for jornada in range(total_jornadas):
         for i in range(mitad):
-            equipo1 = equipos[i]
-            equipo2 = equipos[num_equipos - 1 - i]
+            equipo1 = equipos[i]  # type: ignore
+            equipo2 = equipos[num_equipos - 1 - i]  # type: ignore
             
             # Si uno es None, el otro descansa esta jornada (no creamos partido)
             if equipo1 is not None and equipo2 is not None:

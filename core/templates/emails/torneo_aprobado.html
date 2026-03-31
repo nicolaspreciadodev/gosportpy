@@ -1,0 +1,18 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>¡Tu torneo es oficial, {{ organizador.first_name }}! 🎉</h2>
+<p>El administrador de Gosport ha aprobado tu torneo <strong>{{ torneo.nombre }}</strong>. Esto significa que ya es visible para todos en la plataforma y los equipos pueden comenzar a inscribirse.</p>
+
+<div style="background-color: #374151; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <p><strong>🏅 Torneo:</strong> {{ torneo.nombre }}</p>
+    <p><strong>📅 Inicio:</strong> {{ torneo.fecha_inicio|date:"d \d\e M" }}</p>
+    <p><strong>🔢 Máximo Equipos:</strong> {{ torneo.max_equipos }}</p>
+</div>
+
+<p>Recibe múltiples equipos y prepárate para organizar la mejor liguilla de la ciudad.</p>
+
+<div style="text-align: center;">
+    <a href="#" class="button">Ir a mi Torneo</a>
+</div>
+{% endblock %}

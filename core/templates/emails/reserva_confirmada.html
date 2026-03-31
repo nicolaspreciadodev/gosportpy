@@ -1,0 +1,18 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>¡Hola {{ usuario.first_name }}! 👋</h2>
+<p>Tu reserva ha sido confirmada exitosamente. Aquí tienes los detalles:</p>
+
+<div style="background-color: #374151; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <p><strong>🏟️ Cancha:</strong> {{ cancha.nombre }} ({{ cancha.deporte.nombre }})</p>
+    <p><strong>📅 Fecha:</strong> {{ reserva.fecha|date:"d \d\e F, Y" }}</p>
+    <p><strong>⏰ Hora:</strong> {{ reserva.hora }}</p>
+</div>
+
+<p>Recuerda llegar 10 minutos antes para aprovechar tu tiempo al máximo. Si el pago está indicado en el local, no olvides pasar por administración.</p>
+
+<div style="text-align: center;">
+    <a href="#" class="button">Ver Mi Reserva</a>
+</div>
+{% endblock %}

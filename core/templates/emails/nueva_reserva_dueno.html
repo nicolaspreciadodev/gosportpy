@@ -1,0 +1,17 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>¡Hola {{ cancha.dueño.first_name }}! 👋</h2>
+<p>Tienes una nueva reserva en tu complejo deportivo.</p>
+
+<div style="background-color: #374151; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <p><strong>🏟️ Cancha:</strong> {{ cancha.nombre }}</p>
+    <p><strong>👤 Cliente:</strong> {{ usuario.get_full_name }} ({{ usuario.email }})</p>
+    <p><strong>📅 Fecha:</strong> {{ reserva.fecha|date:"d \d\e F, Y" }}</p>
+    <p><strong>⏰ Hora:</strong> {{ reserva.hora }}</p>
+</div>
+
+<div style="text-align: center;">
+    <a href="#" class="button">Ir a mi Panel de Reservas</a>
+</div>
+{% endblock %}

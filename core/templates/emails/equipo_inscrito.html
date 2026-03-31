@@ -1,0 +1,18 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>¡Tienes un nuevo contendor, {{ organizador.first_name }}! 🏆</h2>
+<p>El equipo <strong>{{ equipo.nombre }}</strong> se acaba de inscribir en tu torneo.</p>
+
+<div style="background-color: #374151; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <p><strong>🏅 Torneo:</strong> {{ torneo.nombre }}</p>
+    <p><strong>⚽ Deporte:</strong> {{ torneo.deporte.nombre }}</p>
+    <p><strong>👥 Equipo:</strong> {{ equipo.nombre }}</p>
+</div>
+
+<p>Recuerda que una vez completado el cupo máximo ({{ torneo.max_equipos }} equipos), podrás iniciar el campeonato generando el Fixture desde el panel de tu torneo.</p>
+
+<div style="text-align: center;">
+    <a href="#" class="button">Ver Torneo</a>
+</div>
+{% endblock %}

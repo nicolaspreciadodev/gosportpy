@@ -29,13 +29,28 @@ class CanchaListView(View):
     def get(self, request):
         canchas = Cancha.objects.select_related('deporte', 'dueño').all()
         deporte_id = request.GET.get('deporte')
+        q = request.GET.get('q')
+        min_precio = request.GET.get('min_precio')
+        max_precio = request.GET.get('max_precio')
+
         if deporte_id:
             canchas = canchas.filter(deporte__id=deporte_id)
+        if q:
+            canchas = canchas.filter(nombre__icontains=q)
+        if min_precio:
+            try: canchas = canchas.filter(precio__gte=float(min_precio))
+            except ValueError: pass
+        if max_precio:
+            try: canchas = canchas.filter(precio__lte=float(max_precio))
+            except ValueError: pass
 
         context = {
             'canchas': canchas,
             'deportes': Deporte.objects.all(),
             'deporte_activo': deporte_id,
+            'q': q,
+            'min_precio': min_precio,
+            'max_precio': max_precio,
         }
         return render(request, 'canchas/cancha_list.html', context)
 
@@ -267,3 +282,38 @@ class CalificarCanchaView(View):
             messages.error(request, f'❌ Error: {str(e)}')
 
         return redirect('canchas:detalle', pk=pk)
+
+import csv
+from django.http import HttpResponse
+
+class ReporteCanchasView(View):
+    """Genera un reporte CSV de las canchas basado en los filtros actuales."""
+    
+    def get(self, request):
+        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+        deporte_id = request.GET.get('deporte')
+        q = request.GET.get('q')
+        min_precio = request.GET.get('min_precio')
+        max_precio = request.GET.get('max_precio')
+
+        if deporte_id:
+            canchas = canchas.filter(deporte__id=deporte_id)
+        if q:
+            canchas = canchas.filter(nombre__icontains=q)
+        if min_precio:
+            try: canchas = canchas.filter(precio__gte=float(min_precio))
+            except ValueError: pass
+        if max_precio:
+            try: canchas = canchas.filter(precio__lte=float(max_precio))
+            except ValueError: pass
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Nombre', 'Deporte', 'Precio', 'Dueño'])
+
+        for c in canchas:
+            writer.writerow([c.id, c.nombre, c.deporte.nombre if c.deporte else 'N/A', c.precio, c.dueño.email if c.dueño else 'N/A'])
+
+        return response

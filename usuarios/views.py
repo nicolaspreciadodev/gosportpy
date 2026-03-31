@@ -117,3 +117,27 @@ class CustomPasswordChangeView(LoginRequiredMixin, SuccessMessageMixin, Password
     template_name = 'usuarios/cambiar_password.html'
     success_url = reverse_lazy('usuarios:perfil')
     success_message = "Tu contraseña ha sido cambiada exitosamente."
+
+import csv
+from django.http import HttpResponse
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.views import View
+
+class ReporteUsuariosView(UserPassesTestMixin, View):
+    """Vista para que un administrador descargue la lista de usuarios."""
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request):
+        usuarios = CustomUser.objects.all().order_by('date_joined')
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="reporte_usuarios.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Email', 'Nombre', 'Apellido', 'Rol', 'Fecha Registro'])
+
+        for u in usuarios:
+            writer.writerow([u.id, u.email, u.nombre, u.apellido, getattr(u, 'rol', 'N/A'), u.date_joined.strftime("%Y-%m-%d")])
+
+        return response
