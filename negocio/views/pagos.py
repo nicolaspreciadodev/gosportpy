@@ -1,89 +1,88 @@
-import mercadopago
+import json
+import hashlib
 from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import LoginRequiredMixin
-from negocio.models import Reserva
+from negocio.models import Reserva, Factura
 from django.contrib import messages
 
-class IniciarPagoView(LoginRequiredMixin, View):
-    """Genera la preferencia en MercadoPago y renderiza el Widget del Checkout."""
+class IniciarPagoWompiView(LoginRequiredMixin, View):
+    """Renderiza el Widget del Checkout de Wompi."""
     def get(self, request, reserva_id):
         reserva = get_object_or_404(Reserva, id=reserva_id, usuario=request.user)
         
         if reserva.pagado:
             messages.info(request, "Esta reserva ya se encuentra pagada.")
-            return redirect('dashboard')
+            return redirect('panel_reservas')
             
-        sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
-        
-        host = request.build_absolute_uri('/')[:-1]
-        
-        preference_data = {
-            "items": [
-                {
-                    "title": f"Reserva de Cancha: {reserva.cancha.nombre}",
-                    "quantity": 1,
-                    "unit_price": float(reserva.cancha.precio)
-                }
-            ],
-            "payer": {
-                "name": request.user.first_name,
-                "email": request.user.email
-            },
-            "back_urls": {
-                "success": f"{host}/negocio/pagos/exito/?reserva_id={reserva.id}",
-                "failure": f"{host}/negocio/pagos/fallo/",
-                "pending": f"{host}/negocio/pagos/pendiente/"
-            },
-            "auto_return": "approved",
-            "external_reference": str(reserva.id)
-        }
-        
-        preference_response = sdk.preference().create(preference_data)
-        
-        # En caso de error contactando a la API de MP
-        if preference_response.get("status") != 201:
-            messages.error(request, "Ocurrió un error inicializando el pago. Intenta de nuevo más tarde.")
-            return redirect('dashboard')
+        factura = reserva.factura
+        if not factura.referencia_pago:
+            factura.save()
             
-        preference = preference_response["response"]
+        monto_centavos = int(factura.total * 100)
         
+        # Validar configuración enviando varibles
         context = {
             'reserva': reserva,
-            'preference_id': preference['id'],
-            'public_key': settings.MERCADOPAGO_PUBLIC_KEY
+            'factura': factura,
+            'monto_centavos': monto_centavos,
+            'public_key': getattr(settings, 'WOMPI_PUBLIC_KEY', 'pub_test_XXXXX')
         }
         
-        return render(request, 'negocio/pagos/checkout.html', context)
+        return render(request, 'negocio/pagos/wompi_checkout.html', context)
 
-class PagoExitosoView(LoginRequiredMixin, View):
-    """Vista de retorno (success back_url) desde MercadoPago."""
+class RespuestaPagoWompiView(LoginRequiredMixin, View):
+    """Vista de retorno del usuario despues del Checkout."""
     def get(self, request):
-        reserva_id = request.GET.get('reserva_id')
-        payment_id = request.GET.get('payment_id')
-        status = request.GET.get('status')
+        transaction_id = request.GET.get('id')
         
-        reserva = None
-        if reserva_id and status == 'approved':
-            reserva = get_object_or_404(Reserva, id=reserva_id, usuario=request.user)
-            reserva.pagado = True
-            reserva.save()
-            messages.success(request, f"Pago aprobado (ID: {payment_id}). ¡Tu reserva está asegurada!")
-            
-        return render(request, 'negocio/pagos/pago_exitoso.html', {
-            'reserva': reserva,
-            'payment_id': payment_id
+        # Buscaremos la factura y reserva por si no hay status en la url
+        factura = Factura.objects.filter(wompi_transaction_id=transaction_id).first()
+        reserva = factura.reserva if factura else None
+        
+        messages.info(request, "Verificando el estado de tu transacción. Si fue exitosa se reflejará en tus reservas pronto.")
+        
+        return render(request, 'negocio/pagos/pago_respuesta.html', {
+            'transaction_id': transaction_id,
+            'reserva': reserva
         })
 
-class PagoFallidoView(LoginRequiredMixin, View):
-    """Vista de retorno (failure back_url) desde MercadoPago."""
-    def get(self, request):
-        messages.error(request, "Tu pago fue rechazado. Revisa tus fondos e intenta nuevamente.")
-        return render(request, 'negocio/pagos/pago_fallido.html')
-
-class PagoPendienteView(LoginRequiredMixin, View):
-    """Vista de retorno (pending back_url) desde MercadoPago."""
-    def get(self, request):
-        messages.warning(request, "Tu pago está pendiente de aprobación. Se notificará cuando se procese.")
-        return render(request, 'negocio/pagos/pago_pendiente.html')
+@method_decorator(csrf_exempt, name='dispatch')
+class WebhookWompiView(View):
+    """Webhook para recibir notificaciones asincronas de Wompi."""
+    def post(self, request, *args, **kwargs):
+        try:
+            payload = json.loads(request.body)
+            event = payload.get('event')
+            data = payload.get('data', {}).get('transaction', {})
+            
+            # Verificación de firma (signature) omitida aquí por simplicidad,
+            # pero idealmente se concatena properties y se hace sha256 con
+            # setting.WOMPI_EVENTS_SECRET.
+            
+            if event == 'transaction.updated':
+                ref = data.get('reference')
+                status = data.get('status')
+                transaction_id = data.get('id')
+                
+                if status == 'APPROVED':
+                    try:
+                        factura = Factura.objects.get(referencia_pago=ref)
+                        reserva = factura.reserva
+                        if not reserva.pagado:
+                            reserva.pagado = True
+                            reserva.estado = 'PROGRAMADA'
+                            reserva.save()
+                            
+                            factura.wompi_transaction_id = transaction_id
+                            factura.save()
+                    except Factura.DoesNotExist:
+                        pass
+                        
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)

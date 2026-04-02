@@ -13,6 +13,7 @@ class Cancha(models.Model):
     descripcion = models.TextField(blank=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     ubicacion = models.CharField(max_length=255)
+    ciudad = models.CharField(max_length=100, default='Bogotá')
     imagen = models.ImageField(upload_to='canchas/', blank=True, null=True)
     dueño = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='canchas')
     deporte = models.ForeignKey(Deporte, on_delete=models.SET_NULL, null=True, related_name='canchas')

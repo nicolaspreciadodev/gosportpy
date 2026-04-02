@@ -78,9 +78,20 @@ class Reserva(models.Model):
     def __str__(self):
         return f"Reserva {self.id} - {self.cancha.nombre} ({self.fecha})"
 
+import uuid
+
 class Factura(models.Model):
     reserva = models.OneToOneField(Reserva, on_delete=models.CASCADE, related_name='factura')
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    referencia_pago = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    wompi_transaction_id = models.CharField(max_length=100, null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.referencia_pago:
+            # Generar referencia única tipo FACTURA-<uuid>
+            self.referencia_pago = f"FACTURA-{uuid.uuid4().hex[:12].upper()}"
+        super().save(*args, **kwargs)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

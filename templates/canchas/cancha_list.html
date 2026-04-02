@@ -15,20 +15,82 @@
         {% endif %}
     </header>
 
-    <!-- Filtro por deporte -->
-    <div class="flex gap-3 flex-wrap">
-        <a href="{% url 'canchas:lista' %}"
-           class="px-4 py-1.5 rounded-full text-sm border transition
-                  {% if not deporte_activo %}border-neon text-neon{% else %}border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
-            Todos
-        </a>
-        {% for dep in deportes %}
-        <a href="?deporte={{ dep.id }}"
-           class="px-4 py-1.5 rounded-full text-sm border transition
-                  {% if deporte_activo == dep.id|stringformat:'s' %}border-neon text-neon{% else %}border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
-            {{ dep.nombre }}
-        </a>
-        {% endfor %}
+    <!-- Filtros Avanzados -->
+    <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 shadow-lg mb-8">
+        <form method="GET" action="{% url 'canchas:lista' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Búsqueda General -->
+            <div class="col-span-1 lg:col-span-2">
+                <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Buscar Cancha</label>
+                <div class="relative">
+                    <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Nombre o palabra clave..." 
+                           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition">
+                </div>
+            </div>
+
+            <!-- Ciudad -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Ciudad</label>
+                <select name="ciudad" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition">
+                    <option value="">Todas las ciudades</option>
+                    {% for city in ciudades %}
+                        <option value="{{ city }}" {% if ciudad_activa == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Deporte -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Deporte</label>
+                <select name="deporte" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition">
+                    <option value="">Cualquier Deporte</option>
+                    {% for dep in deportes %}
+                        <option value="{{ dep.id }}" {% if deporte_activo == dep.id|stringformat:'s' %}selected{% endif %}>{{ dep.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Precio Min y Max -->
+            <div class="flex gap-2">
+                <div class="w-1/2">
+                    <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Min $</label>
+                    <input type="number" name="min_precio" value="{{ min_precio|default:'' }}" placeholder="0" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon transition">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Max $</label>
+                    <input type="number" name="max_precio" value="{{ max_precio|default:'' }}" placeholder="0" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon transition">
+                </div>
+            </div>
+
+            <!-- Fecha Disponibilidad -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Fecha</label>
+                <input type="date" name="fecha" value="{{ fecha_activa|default:'' }}" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon transition [color-scheme:dark]">
+            </div>
+
+            <!-- Ordenar por -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Ordenar por</label>
+                <select name="orden" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition">
+                    <option value="">Relevancia</option>
+                    <option value="precio_asc" {% if orden_activo == 'precio_asc' %}selected{% endif %}>Precio: Menor a Mayor</option>
+                    <option value="precio_desc" {% if orden_activo == 'precio_desc' %}selected{% endif %}>Precio: Mayor a Menor</option>
+                    <option value="mejor_calificadas" {% if orden_activo == 'mejor_calificadas' %}selected{% endif %}>Mejores Calificadas</option>
+                    <option value="mas_reservadas" {% if orden_activo == 'mas_reservadas' %}selected{% endif %}>Más Populares</option>
+                </select>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-end gap-3">
+                <button type="submit" class="w-full bg-neon text-black font-bold py-2.5 rounded-xl hover:bg-green-300 transition shadow-[0_0_15px_rgba(0,255,136,0.3)]">
+                    Aplicar Filtros
+                </button>
+                <a href="{% url 'canchas:lista' %}" class="px-4 py-2.5 rounded-xl border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition text-center flex items-center justify-center" title="Limpiar Filtros">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </a>
+            </div>
+
+        </form>
     </div>
 
     <!-- Grid de canchas -->

@@ -254,8 +254,8 @@ class PanelReservasViewTest(TestCase):
         self.assertEqual(reservas.first(), self.reserva1)
 
 
-class SimularPagoViewTest(TestCase):
-    """Tests para simular el pago de reservas."""
+class WompiPagosTest(TestCase):
+    """Tests para simular el pago de reservas con Wompi y Webhooks."""
 
     def setUp(self):
         from datetime import date, time
@@ -271,41 +271,54 @@ class SimularPagoViewTest(TestCase):
             usuario=self.deportista1, cancha=self.cancha,
             fecha=date(2026, 2, 10), hora=time(15, 0), estado='PROGRAMADA'
         )
-        self.url = reverse('negocio:simular_pago', args=[self.reserva.id])
+        self.url = reverse('negocio:iniciar_pago', args=[self.reserva.id])
 
     def test_acceso_requiere_login(self):
-        response = self.client.post(self.url)
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
-    def test_pago_exitoso(self):
-        """Un usuario puede pagar su propia reserva."""
+    def test_iniciar_pago_exitoso(self):
+        """Un usuario puede ver la vista de pago Wompi de su reserva."""
         self.client.login(username='dep1', password='123')
-        response = self.client.post(self.url)
-        self.reserva.refresh_from_db()
-
-        self.assertTrue(self.reserva.pagado)
-        self.assertRedirects(response, reverse('negocio:factura_detalle', args=[self.reserva.factura.id]))
-
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Wompi')
+        
     def test_pago_ajeno_denegado(self):
-        """Un usuario no puede pagar la reserva de otro."""
+        """Un usuario no puede ver la vista de pago de otro."""
         self.client.login(username='dep2', password='123')
-        response = self.client.post(self.url)
-        self.reserva.refresh_from_db()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 404)
 
+    def test_webhook_wompi_pago_aprobado(self):
+        """El webhook aprueba el pago correctamente y actualiza la BD."""
+        factura = self.reserva.factura
+        
+        # Validar inicial
         self.assertFalse(self.reserva.pagado)
-        self.assertRedirects(response, reverse('dashboard'))
-
-    def test_pago_reserva_cancelada_denegado(self):
-        """No se puede pagar una reserva si fue cancelada."""
-        self.reserva.estado = 'CANCELADA'
-        self.reserva.save()
-
-        self.client.login(username='dep1', password='123')
-        response = self.client.post(self.url)
-
+        
+        payload = {
+            "event": "transaction.updated",
+            "data": {
+                "transaction": {
+                    "id": "12345-wompi-test",
+                    "status": "APPROVED",
+                    "reference": factura.referencia_pago,
+                    "amount_in_cents": 10000
+                }
+            }
+        }
+        
+        url = reverse('negocio:wompi_webhook')
+        response = self.client.post(url, data=payload, content_type='application/json')
+        
+        self.assertEqual(response.status_code, 200)
+        
         self.reserva.refresh_from_db()
-        self.assertFalse(self.reserva.pagado)
-        self.assertRedirects(response, reverse('dashboard'))
+        factura.refresh_from_db()
+        self.assertTrue(self.reserva.pagado)
+        self.assertEqual(self.reserva.estado, 'PROGRAMADA')
+        self.assertEqual(factura.wompi_transaction_id, "12345-wompi-test")
 
 # ===== FASE 10 — SISTEMA DE LIGA COMPLETO =====
 
@@ -530,3 +543,50 @@ class RegistrarResultadoTest(TestCase):
         self.partido.refresh_from_db()
         self.assertEqual(self.partido.goles_local, 3)
         self.assertEqual(self.partido.goles_visitante, 1)
+
+class PanelAnalyticsViewTest(TestCase):
+    """Pruebas para el Dashboard de Analytics de Dueños."""
+    def setUp(self):
+        import datetime
+        self.client = Client()
+        self.deporte = Deporte.objects.create(nombre='Futsal')
+        self.dueño = CustomUser.objects.create_user(username='d_analytics', password='abc', rol='DUEÑO')
+        self.deportista = CustomUser.objects.create_user(username='dep_ana', password='abc', rol='DEPORTISTA')
+
+        self.cancha1 = Cancha.objects.create(nombre='Cancha A', precio=50.00, ubicacion='A', dueño=self.dueño, deporte=self.deporte)
+        self.cancha2 = Cancha.objects.create(nombre='Cancha B', precio=100.00, ubicacion='B', dueño=self.dueño, deporte=self.deporte)
+
+        self.reserva1 = Reserva.objects.create(
+            usuario=self.deportista, cancha=self.cancha1,
+            fecha=datetime.date.today(), hora=datetime.time(10, 0), estado='PROGRAMADA', pagado=True
+        )
+        # Forzamos la creación de la factura (se crea por signals, actualizamos el total por si acaso)
+        self.reserva1.factura.total = 50.00
+        self.reserva1.factura.save()
+
+        self.reserva2 = Reserva.objects.create(
+            usuario=self.deportista, cancha=self.cancha2,
+            fecha=datetime.date.today(), hora=datetime.time(11, 0), estado='PROGRAMADA', pagado=False
+        )
+
+        self.url = reverse('negocio:panel_analytics')
+
+    def test_solo_dueño_acceso(self):
+        self.client.login(username='dep_ana', password='abc')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_analytics_200_ok(self):
+        self.client.login(username='d_analytics', password='abc')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_analytics_calcula_correctamente(self):
+        self.client.login(username='d_analytics', password='abc')
+        response = self.client.get(self.url)
+        
+        # Ingreso = precio de cancha1 (50.00) porque está pagada
+        self.assertEqual(float(response.context['ingresos_totales']), 50.00)
+        self.assertEqual(float(response.context['ingresos_mes']), 50.00)
+        # Total reservas (ambas en estado PROGRAMADA) = 2
+        self.assertEqual(response.context['total_reservas_30_dias'], 2)

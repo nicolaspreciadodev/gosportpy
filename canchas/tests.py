@@ -370,3 +370,37 @@ class CalificarCanchaViewTest(CanchaBaseTestCase):
         self.cancha.refresh_from_db()
         self.assertEqual(self.cancha.promedio_calificacion, 4.0)
         self.assertEqual(self.cancha.total_calificaciones, 2)
+
+
+class CanchaFiltrosTest(CanchaBaseTestCase):
+    """Tests para la Fase 14 de Búsqueda y Filtros Avanzados."""
+
+    def setUp(self):
+        super().setUp()
+        self.cancha_sur = Cancha.objects.create(
+            nombre='Cancha Sur', precio=120.00,
+            ubicacion='Sur', ciudad='Medellín',
+            dueño=self.dueño, deporte=self.deporte
+        )
+
+    def test_filtro_por_ciudad(self):
+        self.client.login(username='deportista_test', password='pass123')
+        res = self.client.get(reverse('canchas:lista'), {'ciudad': 'Medellín'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Cancha Sur')
+        self.assertNotContains(res, 'Cancha Central') # Default is Bogotá
+        
+    def test_filtro_por_rango_precio(self):
+        self.client.login(username='deportista_test', password='pass123')
+        res = self.client.get(reverse('canchas:lista'), {'min_precio': '100', 'max_precio': '150'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Cancha Sur')
+        self.assertNotContains(res, 'Cancha Central')
+
+    def test_busqueda_q(self):
+        self.client.login(username='deportista_test', password='pass123')
+        res = self.client.get(reverse('canchas:lista'), {'q': 'Central'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Cancha Central')
+        self.assertNotContains(res, 'Cancha Sur')
+

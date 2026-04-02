@@ -16,8 +16,9 @@ from django.core.exceptions import PermissionDenied
 from core.mixins import RoleRequiredMixin
 from .models import Cancha, Deporte
 from .forms import CanchaForm
+from django.db.models import Avg, Count
+import datetime
 from . import services
-
 
 class CanchaListView(View):
     """Lista pública de todas las canchas disponibles.
@@ -28,21 +29,51 @@ class CanchaListView(View):
 
     def get(self, request):
         canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+        
         deporte_id = request.GET.get('deporte')
         q = request.GET.get('q')
         min_precio = request.GET.get('min_precio')
         max_precio = request.GET.get('max_precio')
+        ciudad = request.GET.get('ciudad')
+        fecha = request.GET.get('fecha')
+        orden = request.GET.get('orden')
 
         if deporte_id:
             canchas = canchas.filter(deporte__id=deporte_id)
         if q:
             canchas = canchas.filter(nombre__icontains=q)
+        if ciudad:
+            canchas = canchas.filter(ciudad__icontains=ciudad)
         if min_precio:
             try: canchas = canchas.filter(precio__gte=float(min_precio))
             except ValueError: pass
         if max_precio:
             try: canchas = canchas.filter(precio__lte=float(max_precio))
             except ValueError: pass
+            
+        if fecha:
+            try:
+                # Validar disponibilidad por día de la semana
+                fecha_obj = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
+                dia_semana_num = fecha_obj.weekday()  # Lunes 0, Domingo 6
+                # Solo canchas que tienen disponibilidad ese día
+                canchas = canchas.filter(disponibilidades__dia_semana=dia_semana_num).distinct()
+            except ValueError:
+                pass
+                
+        # Ordenamiento dinámico
+        if orden == 'precio_asc':
+            canchas = canchas.order_by('precio')
+        elif orden == 'precio_desc':
+            canchas = canchas.order_by('-precio')
+        elif orden == 'mejor_calificadas':
+            # Usa el related_name calificaciones del modelo
+            canchas = canchas.annotate(promedio=Avg('calificaciones__puntuacion')).order_by('-promedio')
+        elif orden == 'mas_reservadas':
+            # Usa el related_name reservas de Cancha (definido en negocio.Reserva)
+            canchas = canchas.annotate(num_reservas=Count('reservas')).order_by('-num_reservas')
+
+        ciudades_disponibles = Cancha.objects.values_list('ciudad', flat=True).distinct()
 
         context = {
             'canchas': canchas,
@@ -51,6 +82,10 @@ class CanchaListView(View):
             'q': q,
             'min_precio': min_precio,
             'max_precio': max_precio,
+            'ciudad_activa': ciudad,
+            'fecha_activa': fecha,
+            'orden_activo': orden,
+            'ciudades': ciudades_disponibles,
         }
         return render(request, 'canchas/cancha_list.html', context)
 

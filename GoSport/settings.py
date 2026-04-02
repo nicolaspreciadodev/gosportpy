@@ -156,9 +156,10 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Mercado Pago Integration (Fase 13)
-MERCADOPAGO_ACCESS_TOKEN = config('MERCADOPAGO_ACCESS_TOKEN', default='')
-MERCADOPAGO_PUBLIC_KEY = config('MERCADOPAGO_PUBLIC_KEY', default='')
+# Wompi Integration (Fase 13)
+WOMPI_PUBLIC_KEY = config('WOMPI_PUBLIC_KEY', default='pub_test_XXXXX')
+WOMPI_PRIVATE_KEY = config('WOMPI_PRIVATE_KEY', default='prv_test_XXXXX')
+WOMPI_EVENTS_SECRET = config('WOMPI_EVENTS_SECRET', default='test_events_XXXXX')
 
 TAILWIND_APP_NAME = 'theme'
 NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"

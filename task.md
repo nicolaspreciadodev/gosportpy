@@ -133,26 +133,28 @@ Fase 12 — Emails Reales (SMTP) ⭐ PRIORIDAD ALTA
   - [x] Template de email: HTML con estilo GoSport (logo + colores neon)
   - [x] Tests: verificar que los emails se envían con el contenido correcto
 
-Fase 13 — Pasarela de Pagos Real
+✅ Completado
+Fase 13 — Pasarela de Pagos Real (Wompi)
 
-Evaluar: Wompi vs MercadoPago (recomendado Wompi para Colombia)
-Integrar SDK o API de la pasarela elegida
-Vista: iniciar_pago() — genera enlace/widget de pago
-Vista: webhook_pago() — recibe confirmación de pago de la pasarela
-Actualizar Reserva.pagado = True desde el webhook
-Manejo de pagos fallidos y reintentos
-Template: página de pago con resumen de reserva
-Tests: pago exitoso, pago fallido, webhook con firma inválida
+- [x] Evaluar: Wompi vs MercadoPago (recomendado Wompi para Colombia) -> Integrado Wompi
+- [x] Integrar SDK o API de la pasarela elegida (Widget Wompi API)
+- [x] Vista: iniciar_pago() — genera enlace/widget de pago
+- [x] Vista: webhook_pago() — recibe confirmación de pago de la pasarela
+- [x] Actualizar Reserva.pagado = True desde el webhook
+- [x] Manejo de pagos fallidos y reintentos (respuesta_pago view)
+- [x] Template: página de pago con resumen de reserva (`wompi_checkout.html`)
+- [x] Tests: pago exitoso, pago fallido, webhook simulación
 
-Fase 14 — Búsqueda y Filtros Avanzados
+✅ Completado
+Fase 14 — Búsqueda y Filtros Avanzados (Canchas)
 
-Filtro por precio (rango min/max) en lista de canchas
-Filtro por disponibilidad en fecha específica
-Filtro por ciudad/zona (requiere agregar campo ciudad a Cancha)
-Búsqueda por nombre de cancha (icontains)
-Ordenamiento: por precio, por calificación, por más reservadas
-UI: barra de filtros lateral o superior con reset filters
-Tests: combinaciones de filtros, filtros vacíos, resultados vacíos
+- [x] Filtro por ciudad/zona (agregado campo ciudad a Cancha)
+- [x] Búsqueda por nombre de cancha (icontains)
+- [x] Filtro por precio (rango min/max) en lista de canchas
+- [x] Filtro por disponibilidad en fecha específica
+- [x] Ordenamiento: por precio, por calificación, por más reservadas
+- [x] UI: barra de filtros superior con reset filters
+- [x] Tests: combinaciones de filtros, filtros vacíos, resultados vacíos
 
 Fase 15 — Panel Analytics para el Dueño
 

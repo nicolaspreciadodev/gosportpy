@@ -5,7 +5,7 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
 <div class="flex justify-center items-start mt-10 min-h-full">
-    <div class="auth-card" style="margin:0; width:100%; max-width:500px">
+    <div class="auth-card" style="margin:0; width:1000%; max-width:500px">
 
 
         <h2 class="auth-title">Mi Perfil</h2>
@@ -19,8 +19,7 @@
                 <div class="input-wrapper">
                     <i data-lucide="user" class="input-icon"></i>
                     <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}"
-                           value="{{ form.first_name.value|default:'' }}"
-                           class="form-input" required>
+                        value="{{ form.first_name.value|default:'' }}" class="form-input" required>
                 </div>
                 {% if form.first_name.errors %}
                 <p class="text-sm text-red-500 mt-1">{{ form.first_name.errors.0 }}</p>
@@ -32,8 +31,7 @@
                 <div class="input-wrapper">
                     <i data-lucide="users" class="input-icon"></i>
                     <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}"
-                           value="{{ form.last_name.value|default:'' }}"
-                           class="form-input" required>
+                        value="{{ form.last_name.value|default:'' }}" class="form-input" required>
                 </div>
                 {% if form.last_name.errors %}
                 <p class="text-sm text-red-500 mt-1">{{ form.last_name.errors.0 }}</p>
@@ -45,8 +43,7 @@
                 <div class="input-wrapper">
                     <i data-lucide="mail" class="input-icon"></i>
                     <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}"
-                           value="{{ form.email.value|default:'' }}"
-                           class="form-input" required>
+                        value="{{ form.email.value|default:'' }}" class="form-input" required>
                 </div>
                 {% if form.email.errors %}
                 <p class="text-sm text-red-500 mt-1">{{ form.email.errors.0 }}</p>

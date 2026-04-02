@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Pagar Reserva - GoSport{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+    <div class="px-6 py-4 bg-gray-900 border-b border-gray-700">
+        <h2 class="text-2xl font-bold text-white uppercase flex items-center gap-2">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            Finalizar Cita con Wompi
+        </h2>
+    </div>
+
+    <div class="p-6">
+        <div class="bg-gray-700/50 p-5 rounded-lg mb-8">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-600 pb-2">Resumen de Tu Reserva</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Cancha Seleccionada</p>
+                    <p class="text-lg text-white font-bold">{{ reserva.cancha.nombre }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Complejo / Dueño</p>
+                    <p class="text-lg text-white">{{ reserva.cancha.dueño.first_name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Fecha y Hora</p>
+                    <p class="text-lg text-white">{{ reserva.fecha|date:'l, d N Y' }} a las <span class="text-indigo-400 font-bold">{{ reserva.hora|time:'H:i' }}</span></p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Total a Pagar</p>
+                    <p class="text-2xl text-indigo-500 font-black">${{ reserva.cancha.precio }} Cop</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center text-sm text-gray-400">
+                <span>Reserva ID: #{{ reserva.id|stringformat:"04d" }}</span>
+                <span>Procesado por Wompi Bancolombia</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center justify-center p-6 bg-gray-900 rounded-lg border border-dashed border-gray-600">
+            <p class="text-gray-300 mb-6 text-center">Haz clic en el botón de abajo para ser redirigido a Wompi. Podrás usar Nequi, PSE, Bancolombia o Tarjetas de Crédito de forma 100% segura.</p>
+            
+            <div class="w-full flex justify-center scale-110 my-4">
+                <form>
+                    <script src="https://checkout.wompi.co/widget.js"
+                        data-render="button"
+                        data-public-key="{{ public_key }}"
+                        data-currency="COP"
+                        data-amount-in-cents="{{ monto_centavos }}"
+                        data-reference="{{ factura.referencia_pago }}"
+                        data-redirect-url="{{ request.scheme }}://{{ request.get_host }}{% url 'negocio:pago_respuesta' %}"
+                        >
+                    </script>
+                </form>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <a href="{% url 'negocio:panel_reservas' %}" class="text-gray-400 hover:text-white transition-colors underline">Cancelar y volver al panel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}GoSport | Analytics{% endblock %}
+{% block content %}
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="max-w-7xl mx-auto space-y-8">
+    <header class="flex items-end justify-between border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Panel Analytics <span class="text-neon ml-2">📉</span></h2>
+            <p class="text-gray-400 mt-1">Monitorea tus ingresos y la popularidad de tus recintos</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="bg-gray-800 text-gray-300 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-700 transition">
+                Volver al Panel
+            </a>
+        </div>
+    </header>
+
+    <!-- Cards (Hero Metrics) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-gradient-to-br from-green-900/40 to-black border border-neon/30 rounded-2xl p-6 shadow-[0_0_20px_rgba(0,255,136,0.05)]">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Ingresos Totales</h3>
+            <div class="text-4xl font-black text-white">${{ ingresos_totales|floatformat:"2" }}</div>
+            <p class="text-neon text-xs mt-2 font-medium">Histórico acumulado</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Ingresos del Mes</h3>
+            <div class="text-4xl font-black text-white">${{ ingresos_mes|floatformat:"2" }}</div>
+            <p class="text-gray-500 text-xs mt-2">Mes actual corriente</p>
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-2xl p-6">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Nuevas Reservas (30d)</h3>
+            <div class="text-4xl font-black text-white">{{ total_reservas_30_dias }}</div>
+            <p class="text-blue-400 text-xs mt-2 font-medium">Últimos 30 días</p>
+        </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Bar Chart Panel -->
+        <div class="lg:col-span-2 bg-gray-900/60 border border-gray-800 rounded-2xl p-6 relative">
+            <h3 class="text-white text-lg font-bold mb-4 flex items-center gap-2">Demanda Diaria <span class="text-sm font-normal text-gray-400">| Cantidad de Reservas</span></h3>
+            <div class="h-80 relative">
+                <canvas id="reservasBarChart"></canvas>
+            </div>
+            {% if total_reservas_30_dias == 0 %}
+            <div class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm rounded-2xl z-20">
+                <svg class="w-12 h-12 text-gray-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-gray-400 font-medium">No hay reservas recientes</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Doughnut Chart Panel -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 relative flex flex-col items-center">
+            <h3 class="text-white text-lg font-bold mb-4 w-full text-left">Canchas Populares</h3>
+            <div class="h-64 w-full relative">
+                <canvas id="canchasDoughnutChart"></canvas>
+            </div>
+            {% if total_reservas_30_dias == 0 %}
+            <div class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm rounded-2xl z-20">
+                <p class="text-gray-400 font-medium">No hay reservas</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.font.family = "'Inter', 'sans-serif'";
+
+    // --- BAR CHART --- //
+    const rawDiasLabels = '{{ dias_labels_json|safe }}';
+    const rawDiasData = '{{ dias_data_json|safe }}';
+
+    if (rawDiasLabels && rawDiasLabels !== '[]' && rawDiasLabels !== 'null') {
+        const diasLabels = JSON.parse(rawDiasLabels || '[]');
+        const diasData = JSON.parse(rawDiasData || '[]');
+
+        if (diasLabels.length > 0) {
+            const ctxBar = document.getElementById('reservasBarChart').getContext('2d');
+            
+            // Gradient for Bar Chart
+            const barGradient = ctxBar.createLinearGradient(0, 0, 0, 400);
+            barGradient.addColorStop(0, 'rgba(0, 255, 136, 0.8)');   // neon
+            barGradient.addColorStop(1, 'rgba(0, 255, 136, 0.1)');
+
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: diasLabels,
+                    datasets: [{
+                        label: 'Reservas por Día',
+                        data: diasData,
+                        backgroundColor: barGradient,
+                        borderColor: 'rgba(0, 255, 136, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#00ff88',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#00ff88',
+                            borderColor: '#333',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: '#6b7280' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }
+                        },
+                        x: {
+                            ticks: { color: '#6b7280', maxRotation: 45, minRotation: 45 },
+                            grid: { display: false, drawBorder: false }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // --- DOUGHNUT CHART --- //
+    const rawCanchasLabels = '{{ canchas_labels_json|safe }}';
+    const rawCanchasData = '{{ canchas_data_json|safe }}';
+
+    if (rawCanchasLabels && rawCanchasLabels !== '[]' && rawCanchasLabels !== 'null') {
+        const canchasLabels = JSON.parse(rawCanchasLabels || '[]');
+        const canchasData = JSON.parse(rawCanchasData || '[]');
+
+        if (canchasLabels.length > 0) {
+            const ctxDoughnut = document.getElementById('canchasDoughnutChart').getContext('2d');
+            const colorPalette = [
+                'rgba(0, 255, 136, 0.8)',   // Neon Green
+                'rgba(59, 130, 246, 0.8)',  // Blue
+                'rgba(168, 85, 247, 0.8)',  // Purple
+                'rgba(234, 179, 8, 0.8)',   // Yellow
+                'rgba(239, 68, 68, 0.8)'    // Red
+            ];
+
+            new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: canchasLabels,
+                    datasets: [{
+                        label: 'Reservas por Cancha',
+                        data: canchasData,
+                        backgroundColor: colorPalette,
+                        borderColor: 'rgb(15, 23, 42)',
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e5e7eb', font: { size: 12 }, padding: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#e5e7eb',
+                            borderColor: '#333',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    },
+                    cutout: '70%',
+                }
+            });
+        }
+    }
+
+});
+</script>
+{% endblock %}
