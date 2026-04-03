@@ -352,3 +352,128 @@ class ReporteCanchasView(View):
             writer.writerow([c.id, c.nombre, c.deporte.nombre if c.deporte else 'N/A', c.precio, c.dueño.email if c.dueño else 'N/A'])
 
         return response
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+class ReporteCanchasPdfView(View):
+    """Genera un reporte PDF de las canchas basado en los filtros actuales."""
+    
+    def get(self, request):
+        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+        # Filtros similares a la vista CSV
+        deporte_id = request.GET.get('deporte')
+        q = request.GET.get('q')
+        min_precio = request.GET.get('min_precio')
+        max_precio = request.GET.get('max_precio')
+
+        if deporte_id:
+            canchas = canchas.filter(deporte__id=deporte_id)
+        if q:
+            canchas = canchas.filter(nombre__icontains=q)
+        if min_precio:
+            try: canchas = canchas.filter(precio__gte=float(min_precio))
+            except ValueError: pass
+        if max_precio:
+            try: canchas = canchas.filter(precio__lte=float(max_precio))
+            except ValueError: pass
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.pdf"'
+
+        p = canvas.Canvas(response, pagesize=letter)
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(100, 750, "Reporte de Canchas - GoSport2")
+        
+        p.setFont("Helvetica", 12)
+        y = 710
+        for idx, c in enumerate(canchas):
+            deporte = c.deporte.nombre if c.deporte else 'N/A'
+            dueño = c.dueño.email if c.dueño else 'N/A'
+            texto = f"{idx+1}. {c.nombre} | {deporte} | ${c.precio} | {dueño}"
+            p.drawString(100, y, texto)
+            y -= 20
+            if y < 50:  # Nueva página si se acaba el espacio
+                p.showPage()
+                p.setFont("Helvetica", 12)
+                y = 750
+
+        p.showPage()
+        p.save()
+
+        return response
+
+import openpyxl
+from docx import Document
+
+class ReporteCanchasExcelView(View):
+    """Genera un reporte Excel (.xlsx) de las canchas."""
+    
+    def get(self, request):
+        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+        # Filtros
+        deporte_id = request.GET.get('deporte')
+        q = request.GET.get('q')
+        if deporte_id:
+            canchas = canchas.filter(deporte__id=deporte_id)
+        if q:
+            canchas = canchas.filter(nombre__icontains=q)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.xlsx"'
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Canchas"
+        
+        # Headers
+        ws.append(["ID", "Nombre", "Deporte", "Precio", "Ubicación", "Ciudad", "Dueño"])
+        
+        for c in canchas:
+            ws.append([
+                c.id, c.nombre, 
+                c.deporte.nombre if c.deporte else 'N/A', 
+                c.precio, c.ubicacion, c.ciudad,
+                c.dueño.email if c.dueño else 'N/A'
+            ])
+            
+        wb.save(response)
+        return response
+
+
+class ReporteCanchasWordView(View):
+    """Genera un reporte Word (.docx) de las canchas."""
+    
+    def get(self, request):
+        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+        # Filtros
+        deporte_id = request.GET.get('deporte')
+        q = request.GET.get('q')
+        if deporte_id:
+            canchas = canchas.filter(deporte__id=deporte_id)
+        if q:
+            canchas = canchas.filter(nombre__icontains=q)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.docx"'
+
+        doc = Document()
+        doc.add_heading('Reporte de Canchas - GoSport2', 0)
+        
+        table = doc.add_table(rows=1, cols=4)
+        table.style = 'Table Grid'
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'ID'
+        hdr_cells[1].text = 'Nombre'
+        hdr_cells[2].text = 'Deporte'
+        hdr_cells[3].text = 'Dueño'
+        
+        for c in canchas:
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(c.id)
+            row_cells[1].text = c.nombre
+            row_cells[2].text = c.deporte.nombre if c.deporte else 'N/A'
+            row_cells[3].text = c.dueño.email if c.dueño else 'N/A'
+            
+        doc.save(response)
+        return response

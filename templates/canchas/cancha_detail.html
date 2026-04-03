@@ -11,66 +11,111 @@
         <h2 class="text-3xl font-bold text-white">{{ cancha.nombre }}</h2>
     </div>
 
-    <div class="bg-gray-900/50 border border-gray-800/80 rounded-2xl overflow-hidden">
+    <div class="bg-gray-900/50 border border-gray-800/80 rounded-2xl overflow-hidden shadow-2xl">
         {% if cancha.imagen %}
-        <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}"
-             class="w-full h-64 object-cover">
+        <div class="relative w-full h-80">
+            <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}"
+                 class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+            <div class="absolute bottom-6 left-8">
+                <span class="px-3 py-1 bg-neon text-dark font-black rounded-full text-sm uppercase tracking-wide inline-block mb-3">
+                    {{ cancha.deporte.nombre }}
+                </span>
+                <h1 class="text-4xl font-black text-white drop-shadow-md">{{ cancha.nombre }}</h1>
+            </div>
+            <div class="absolute top-6 right-8 bg-black/70 backdrop-blur-md px-6 py-3 border border-gray-700 rounded-2xl shadow-xl flex flex-col items-center">
+                <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">Precio / Hora</p>
+                <p class="text-3xl font-black text-neon">$ {{ cancha.precio|floatformat:"0" }} <span class="text-lg">COP</span></p>
+            </div>
+        </div>
+        {% else %}
+        <div class="p-8 border-b border-gray-800">
+            <h1 class="text-4xl font-black text-white">{{ cancha.nombre }}</h1>
+            <p class="text-neon font-bold mt-2">$ {{ cancha.precio|floatformat:"0" }} COP / hr</p>
+        </div>
         {% endif %}
 
-        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="space-y-4">
+        <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna Principal -->
+            <div class="lg:col-span-2 space-y-6">
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Deporte</p>
-                    <p class="text-white font-bold">{{ cancha.deporte.nombre }}</p>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 mb-3">
+                        <i data-lucide="map-pin" class="text-gray-400 w-5 h-5"></i> Ubicación
+                    </h3>
+                    <p class="text-gray-300 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">{{ cancha.ubicacion }} <br><span class="text-sm text-gray-500 font-medium">{{ cancha.ciudad }}</span></p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Ubicación</p>
-                    <p class="text-white">{{ cancha.ubicacion }}</p>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 mb-3">
+                        <i data-lucide="info" class="text-gray-400 w-5 h-5"></i> Descripción
+                    </h3>
+                    <p class="text-gray-300 leading-relaxed">{{ cancha.descripcion|default:"Esta cancha no tiene una descripción detallada por el momento." }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Descripción</p>
-                    <p class="text-gray-300">{{ cancha.descripcion|default:"Sin descripción." }}</p>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 mb-3">
+                        <i data-lucide="calendar" class="text-gray-400 w-5 h-5"></i> Horarios de Atención
+                    </h3>
+                    <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 max-h-48 overflow-y-auto">
+                        {% if cancha.disponibilidades.all %}
+                            <ul class="space-y-2 text-gray-300 text-sm">
+                            {% for d in cancha.disponibilidades.all|dictsort:"dia_semana" %}
+                                <li class="flex justify-between border-b border-gray-700/50 pb-1">
+                                    <span class="font-medium">
+                                        {% if d.dia_semana == 0 %}Lunes
+                                        {% elif d.dia_semana == 1 %}Martes
+                                        {% elif d.dia_semana == 2 %}Miércoles
+                                        {% elif d.dia_semana == 3 %}Jueves
+                                        {% elif d.dia_semana == 4 %}Viernes
+                                        {% elif d.dia_semana == 5 %}Sábado
+                                        {% elif d.dia_semana == 6 %}Domingo{% endif %}
+                                    </span>
+                                    <span class="text-gray-400">{{ d.hora_inicio|time:"H:i" }} - {{ d.hora_fin|time:"H:i" }}</span>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-gray-500 italic">No hay un horario fijo registrado en el sistema.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <div class="bg-black/30 p-6 rounded-xl border border-gray-800">
-                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Precio por hora</p>
-                    <p class="text-4xl font-black text-neon">${{ cancha.precio }}</p>
+            <!-- Columna Secundaria -->
+            <div class="space-y-6">
+                <div class="bg-black/40 p-6 rounded-2xl border border-gray-800 shadow-inner">
+                    <h3 class="text-sm text-gray-500 uppercase tracking-widest font-bold mb-4">Administrador</h3>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 font-bold border border-gray-700">
+                            {{ cancha.dueño.username|make_list|first|upper }}
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">{{ cancha.dueño.get_full_name|default:cancha.dueño.username }}</p>
+                            <p class="text-xs text-gray-500">Contactar Dueño</p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Propietario</p>
-                    <p class="text-white">{{ cancha.dueño.get_full_name|default:cancha.dueño.username }}</p>
+                
+                {% if user.rol == 'DEPORTISTA' %}
+                <div class="bg-gradient-to-b from-gray-800/80 to-black/80 p-6 rounded-2xl border border-neon/30 text-center">
+                    <p class="text-gray-300 text-sm mb-4">Asegura tu bloque antes de que alguien más lo tome.</p>
+                    <a href="{% url 'negocio:crear_reserva' cancha.pk %}"
+                       class="block w-full py-3.5 bg-neon text-black font-black uppercase tracking-wide rounded-xl
+                              shadow-[0_0_20px_rgba(0,255,136,0.3)] hover:bg-green-300 hover:scale-105 transition-all duration-300">
+                        Ir a Reservar
+                    </a>
                 </div>
+                {% endif %}
+                
+                {% if user.rol == 'DUEÑO' and cancha.dueño == user %}
+                <div class="flex flex-col gap-2">
+                    <a href="{% url 'canchas:disponibilidad' cancha.pk %}" class="block text-center py-2 border border-neon text-neon rounded-lg hover:bg-neon hover:text-black transition font-medium text-sm">Gestionar Horarios</a>
+                    <a href="{% url 'canchas:editar' cancha.pk %}" class="block text-center py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition font-medium text-sm">Editar Cancha</a>
+                    <a href="{% url 'canchas:eliminar' cancha.pk %}" class="block text-center py-2 border border-red-800 text-red-500 rounded-lg hover:bg-red-900/30 transition font-medium text-sm">Eliminar Registro</a>
+                </div>
+                {% endif %}
             </div>
         </div>
+    </div>
 
-        <div class="px-8 pb-8 flex gap-4 border-t border-gray-800 pt-6">
-            {% if user.rol == 'DEPORTISTA' %}
-            <a href="{% url 'negocio:crear_reserva' cancha.pk %}"
-               class="flex-1 text-center py-3 bg-neon text-black font-bold rounded-xl
-                      hover:bg-green-300 transition">
-                Reservar Ahora
-            </a>
-            {% endif %}
-            {% if user.rol == 'DUEÑO' and cancha.dueño == user %}
-            <a href="{% url 'canchas:disponibilidad' cancha.pk %}"
-               class="px-6 py-3 border border-neon text-neon rounded-xl
-                      hover:bg-neon hover:text-black transition font-medium">
-                Horarios
-            </a>
-            <a href="{% url 'canchas:editar' cancha.pk %}"
-               class="px-6 py-3 border border-gray-700 text-gray-300 rounded-xl
-                      hover:bg-gray-800 hover:text-white transition font-medium">
-                Editar
-            </a>
-            <a href="{% url 'canchas:eliminar' cancha.pk %}"
-               class="px-6 py-3 border border-red-800 text-red-400 rounded-xl
-                      hover:bg-red-900/30 transition font-medium">
-                Eliminar
-            </a>
-            {% endif %}
-        </div>
     </div>
 
     <!-- Ratings Section -->

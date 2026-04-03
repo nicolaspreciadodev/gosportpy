@@ -1,0 +1,13 @@
+{
+    "name": "theme",
+    "version": "1.0.0",
+    "description": "GoSport2 Tailwind v4",
+    "scripts": {
+        "build": "npx @tailwindcss/cli -i ./src/styles.css -o ../static/css/dist/styles.css --minify",
+        "dev": "npx @tailwindcss/cli -i ./src/styles.css -o ../static/css/dist/styles.css --watch"
+    },
+    "devDependencies": {
+        "tailwindcss": "^4.0.0",
+        "@tailwindcss/cli": "^4.0.0"
+    }
+}

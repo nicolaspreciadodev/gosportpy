@@ -21,9 +21,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-300">Fecha</label>
-                    <input type="date" name="fecha" required 
+                    <input type="text" name="fecha" id="id_fecha" required 
                            class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300"
-                           min="{% now 'Y-m-d' %}">
+                           placeholder="Seleccione la fecha...">
                 </div>
                 
                 <div class="space-y-2">
@@ -37,7 +37,7 @@
 
             <div class="bg-dark/50 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
                 <span class="text-gray-400">Total a pagar:</span>
-                <span class="text-2xl font-bold text-neon">${{ cancha.precio }}</span>
+                <span class="text-2xl font-bold text-neon">$ {{ cancha.precio|floatformat:"0" }} COP</span>
             </div>
 
             <div class="flex gap-4 pt-4 border-t border-gray-800">
@@ -53,21 +53,27 @@
     </div>
 </div>
 
+<!-- Flatpickr CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const fechaInput = document.querySelector('input[name="fecha"]');
+    const fechaInput = document.getElementById('id_fecha');
     const horaSelect = document.getElementById('hora-select');
     const canchaId = {{ cancha.id }};
 
-    fechaInput.addEventListener('change', function() {
-        if(!this.value) {
+    function cargarHorarios(dateStr) {
+        if(!dateStr) {
             horaSelect.innerHTML = '<option value="">Seleccione una fecha primero</option>';
             return;
         }
         
         horaSelect.innerHTML = '<option value="">Cargando horarios...</option>';
         
-        fetch(`/canchas/${canchaId}/slots/?fecha=${this.value}`)
+        fetch(`/canchas/${canchaId}/slots/?fecha=${dateStr}`)
             .then(res => res.json())
             .then(data => {
                 if(data.error) {
@@ -90,6 +96,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => {
                 horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
             });
+    }
+
+    // Initialize Flatpickr
+    let maxDateLimits = new Date();
+    maxDateLimits.setDate(maxDateLimits.getDate() + 30); // 30 days max limit rule
+    
+    flatpickr(fechaInput, {
+        locale: "es",
+        minDate: "today",
+        maxDate: maxDateLimits,
+        altInput: true,
+        altFormat: "d \\de F Y",
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates, dateStr, instance) {
+            cargarHorarios(dateStr);
+        }
     });
 });
 </script>

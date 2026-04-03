@@ -10,6 +10,9 @@ from .views import (
     DisponibilidadSlotsView,
     CalificarCanchaView,
     ReporteCanchasView,
+    ReporteCanchasPdfView,
+    ReporteCanchasExcelView,
+    ReporteCanchasWordView,
 )
 
 app_name = 'canchas'
@@ -24,4 +27,7 @@ urlpatterns = [
     path('<int:pk>/slots/', DisponibilidadSlotsView.as_view(), name='slots'),
     path('<int:pk>/calificar/', CalificarCanchaView.as_view(), name='calificar'),
     path('reporte/', ReporteCanchasView.as_view(), name='reporte'),
+    path('reporte/pdf/', ReporteCanchasPdfView.as_view(), name='reporte_pdf'),
+    path('reporte/excel/', ReporteCanchasExcelView.as_view(), name='reporte_excel'),
+    path('reporte/word/', ReporteCanchasWordView.as_view(), name='reporte_word'),
 ]

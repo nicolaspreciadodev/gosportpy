@@ -11,7 +11,13 @@
     </header>
     {% if user.is_superuser %}
         <section class="max-w-6xl mb-12">
-            <h3 class="text-2xl font-bold text-neon mb-6">Estadísticas Oficiales Globales</h3>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h3 class="text-2xl font-bold text-neon">Estadísticas Oficiales Globales</h3>
+                <div class="flex gap-2">
+                    <a href="{% url 'canchas:reporte_pdf' %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-[0_0_10px_rgba(255,255,255,0.05)]">📄 Auditoría PDF</a>
+                    <a href="{% url 'canchas:reporte_excel' %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.1)]">📊 Auditoría Excel</a>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <!-- Tarjeta 1 -->
                 <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-6 flex items-center gap-4 hover:border-gray-600 transition group cursor-pointer">
@@ -121,7 +127,7 @@
                             {% endif %}
                         </div>
                         <div class="absolute top-3 right-3 bg-dark/80 backdrop-blur text-neon text-sm px-2 py-1 rounded font-medium">
-                            ${{ cancha.precio }}
+                            $ {{ cancha.precio|floatformat:"0" }} COP
                         </div>
                     </div>
                     <div class="p-5">
@@ -220,7 +226,7 @@
                             </div>
                         {% endif %}
                         <div class="absolute top-4 right-4 bg-black/60 backdrop-blur text-neon text-sm px-3 py-1 rounded-full border border-neon/30 font-bold shadow-[0_0_10px_rgba(0,255,136,0.3)]">
-                            ${{ cancha.precio }}/hr
+                            $ {{ cancha.precio|floatformat:"0" }} COP / hr
                         </div>
                         <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full border border-gray-700 font-medium tracking-wide">
                             {{ cancha.deporte.nombre|upper }}
@@ -256,7 +262,13 @@
         </section>
 
         <section>
-            <h3 class="text-xl font-semibold text-neon mb-4">Mis Reservas Activas</h3>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <h3 class="text-xl font-semibold text-neon">Mis Reservas Activas</h3>
+                <div class="flex gap-2">
+                    <a href="{% url 'canchas:reporte_pdf' %}" class="bg-gray-800/80 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-sm">📄 Mi Historial PDF</a>
+                    <a href="{% url 'canchas:reporte_excel' %}" class="bg-gray-800/80 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.1)]">📊 Mi Historial Excel</a>
+                </div>
+            </div>
             <div class="bg-card border border-gray-800 rounded-xl overflow-hidden">
                 <ul class="divide-y divide-gray-800 max-h-[30rem] overflow-y-auto">
                     {% for reserva in mis_reservas %}

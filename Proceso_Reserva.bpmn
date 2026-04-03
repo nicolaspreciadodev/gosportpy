@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             id="sid-38422fae-e03e-43a3-bef4-bd33b32041b2"
+             targetNamespace="http://bpmn.io/bpmn"
+             exporter="bpmn-js (https://demo.bpmn.io)"
+             exporterVersion="11.1.0">
+  <collaboration id="Collaboration_1r9y3p2">
+    <participant id="Participant_0e704t5" name="Gestión de Reservas - GoSport2" processRef="Process_1xwq68y" />
+  </collaboration>
+  <process id="Process_1xwq68y" isExecutable="false">
+    <startEvent id="StartEvent_1y45yut" name="Usuario desea realizar reserva">
+      <outgoing>SequenceFlow_0h21x7r</outgoing>
+    </startEvent>
+    <task id="Task_1hcentk" name="Buscar Cancha Filtrando Criterios">
+      <incoming>SequenceFlow_0h21x7r</incoming>
+      <outgoing>SequenceFlow_0wnb4ke</outgoing>
+    </task>
+    <exclusiveGateway id="ExclusiveGateway_15hu1pt" name="¿Cancha Disponible?">
+      <incoming>SequenceFlow_0wnb4ke</incoming>
+      <outgoing>SequenceFlow_1v2bq5v</outgoing>
+      <outgoing>SequenceFlow_1j142yv</outgoing>
+    </exclusiveGateway>
+    <task id="Task_0z2y8v8" name="Procesar Solicitud de Reserva">
+      <incoming>SequenceFlow_1v2bq5v</incoming>
+      <outgoing>SequenceFlow_0p62g5n</outgoing>
+    </task>
+    <endEvent id="EndEvent_1x9w1w2" name="Reserva Exitosa">
+      <incoming>SequenceFlow_0p62g5n</incoming>
+    </endEvent>
+    <endEvent id="EndEvent_0p1f2h3" name="Reserva Rechazada">
+      <incoming>SequenceFlow_1j142yv</incoming>
+    </endEvent>
+    <sequenceFlow id="SequenceFlow_0h21x7r" sourceRef="StartEvent_1y45yut" targetRef="Task_1hcentk" />
+    <sequenceFlow id="SequenceFlow_0wnb4ke" sourceRef="Task_1hcentk" targetRef="ExclusiveGateway_15hu1pt" />
+    <sequenceFlow id="SequenceFlow_1v2bq5v" name="Sí" sourceRef="ExclusiveGateway_15hu1pt" targetRef="Task_0z2y8v8" />
+    <sequenceFlow id="SequenceFlow_1j142yv" name="No" sourceRef="ExclusiveGateway_15hu1pt" targetRef="EndEvent_0p1f2h3" />
+    <sequenceFlow id="SequenceFlow_0p62g5n" sourceRef="Task_0z2y8v8" targetRef="EndEvent_1x9w1w2" />
+  </process>
+  <!-- simplified DI to comply with basics -->
+</definitions>

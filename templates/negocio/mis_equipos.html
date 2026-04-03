@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+    <header class="flex justify-between items-end border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Mis Equipos</h2>
+            <p class="text-gray-400 mt-1">Gestiona tus equipos y participa en torneos</p>
+        </div>
+        <a href="{% url 'negocio:crear_equipo' %}" class="bg-neon text-black font-bold px-5 py-2.5 rounded-xl hover:bg-green-300 transition">
+            + Nuevo Equipo
+        </a>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for equipo in equipos %}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+            <h3 class="text-xl font-bold text-white mb-2">{{ equipo.nombre }}</h3>
+            <p class="text-sm text-gray-400 mb-4">{{ equipo.jugadores.count }} Integrantes</p>
+            <ul class="text-sm text-gray-300 mb-4 border-t border-gray-800 pt-2 h-20 overflow-y-auto">
+                {% for j in equipo.jugadores.all %}
+                    <li>• {{ j.first_name }} {{ j.last_name }} ({{ j.username }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center border border-dashed border-gray-800 rounded-2xl p-12 text-gray-500">
+            Aún no perteneces a ningún equipo.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ class Torneo(models.Model):
     ESTADO_CHOICES = (
         ('PENDIENTE', 'Pendiente'),
         ('PUBLICADO', 'Publicado'),
+        ('RECHAZADO', 'Rechazado'),
     )
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)

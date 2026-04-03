@@ -41,6 +41,12 @@
         </div>
     {% endif %}
 
+    <div class="flex gap-2 mb-4">
+        <a href="{% url 'negocio:reporte_reservas_pdf' %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar PDF">📄 PDF</a>
+        <a href="{% url 'negocio:reporte_reservas_excel' %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar Excel">📊 EXCEL</a>
+        <a href="{% url 'negocio:reporte_reservas_word' %}" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar Word">📝 WORD</a>
+    </div>
+
     <div class="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden shadow-xl relative">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon via-green-400 to-transparent opacity-50"></div>
         

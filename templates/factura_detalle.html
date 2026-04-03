@@ -78,7 +78,7 @@
                                 <p class="text-sm text-gray-400 mt-1">Disciplina: {{ reserva.cancha.deporte.nombre|title }}</p>
                             </td>
                             <td class="py-5 px-6 text-right">
-                                <p class="font-mono text-lg text-white">${{ reserva.cancha.precio }}</p>
+                                <p class="font-mono text-lg text-white">$ {{ reserva.cancha.precio|floatformat:"0" }} COP</p>
                             </td>
                         </tr>
                         <tr class="hover:bg-gray-800/30 transition-colors">
@@ -87,7 +87,7 @@
                                 <p class="text-sm text-gray-500 mt-1">Tasa de uso del software</p>
                             </td>
                             <td class="py-5 px-6 text-right">
-                                <p class="font-mono text-gray-400">$0.00</p>
+                                <p class="font-mono text-gray-400">$ 0 COP</p>
                             </td>
                         </tr>
                     </tbody>
@@ -97,7 +97,7 @@
             <div class="flex items-center justify-between border-t-2 border-dashed border-gray-700 pt-8">
                 <p class="text-gray-500 uppercase tracking-widest text-sm font-bold">Total Cancelado</p>
                 <div class="text-right">
-                    <p class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 drop-shadow-sm">${{ factura.total }}</p>
+                    <p class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 drop-shadow-sm">$ {{ factura.total|floatformat:"0" }} COP</p>
                     <p class="text-neon text-sm font-medium mt-2 tracking-wide flex items-center justify-end gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         Pago procesado exitosamente

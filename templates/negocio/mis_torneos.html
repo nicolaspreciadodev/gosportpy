@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+    <header class="flex justify-between items-end border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Mis Torneos</h2>
+            <p class="text-gray-400 mt-1">Administra tus solicitudes y torneos activos</p>
+        </div>
+        <a href="{% url 'negocio:solicitar_torneo' %}" class="bg-neon text-black font-bold px-5 py-2.5 rounded-xl hover:bg-green-300 transition">
+            + Solicitar Torneo
+        </a>
+    </header>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <table class="w-full text-left text-gray-300">
+            <thead class="bg-gray-800/50 border-b border-gray-800 text-sm uppercase">
+                <tr>
+                    <th class="px-6 py-4">Nombre</th>
+                    <th class="px-6 py-4">Deporte</th>
+                    <th class="px-6 py-4">Fechas</th>
+                    <th class="px-6 py-4">Estado</th>
+                    <th class="px-6 py-4">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for torneo in torneos %}
+                <tr class="hover:bg-gray-800/30 transition">
+                    <td class="px-6 py-4 font-bold">{{ torneo.nombre }}</td>
+                    <td class="px-6 py-4">{{ torneo.deporte.nombre }}</td>
+                    <td class="px-6 py-4">{{ torneo.fecha_inicio }} al {{ torneo.fecha_fin }}</td>
+                    <td class="px-6 py-4">
+                        {% if torneo.estado == 'PUBLICADO' %}
+                            <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs border border-green-500/30">Aprobado</span>
+                        {% elif torneo.estado == 'RECHAZADO' %}
+                            <span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs border border-red-500/30">Rechazado</span>
+                        {% else %}
+                            <span class="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs border border-yellow-500/30">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'negocio:torneo_detalle' torneo.id %}" class="text-neon hover:text-green-300 text-sm font-semibold">Ver detalle</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">No has solicitado ningún torneo aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

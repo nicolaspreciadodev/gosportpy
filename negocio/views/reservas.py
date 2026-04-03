@@ -24,6 +24,19 @@ class CrearReservaView(RoleRequiredMixin, View):
             messages.error(request, 'Debe proporcionar una fecha y hora.')
             return render(request, 'crear_reserva.html', {'cancha': cancha})
 
+        from datetime import datetime
+        import datetime as dt
+        from django.utils import timezone
+        
+        try:
+            fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+            if fecha_obj > timezone.now().date() + dt.timedelta(days=30):
+                messages.error(request, 'No puedes hacer reservas con más de 30 días (1 mes) de anticipación.')
+                return render(request, 'crear_reserva.html', {'cancha': cancha})
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido.')
+            return render(request, 'crear_reserva.html', {'cancha': cancha})
+
         from canchas.services import validar_slot_disponible
         if not validar_slot_disponible(cancha_id, fecha, hora):
             messages.error(request, 'El horario seleccionado no está disponible o es inválido.')

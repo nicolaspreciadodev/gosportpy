@@ -40,7 +40,7 @@ class FacturaDetalleViewTest(TestCase):
         url = reverse('negocio:factura_detalle', args=[self.factura.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, str(self.factura.total))
+        self.assertContains(response, str(int(self.factura.total)))
 
     def test_otro_usuario_no_puede_ver_factura(self):
         """Un deportista ajeno es redirigido al dashboard. Edge case: acceso cruzado."""

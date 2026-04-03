@@ -13,10 +13,11 @@ class AprobarTorneoView(LoginRequiredMixin, View):
     """Vista para que un ADMINISTRADOR apruebe o rechace un torneo."""
     def post(self, request, torneo_id):
         torneo = get_object_or_404(Torneo, id=torneo_id)
-        accion = request.POST.get('accion')
+        accion = request.POST.get('action') or request.POST.get('accion')
 
         if accion == 'aprobar':
             torneo.estado = 'PUBLICADO'
+            torneo.is_approved = True
             
             try:
                 from core.emails import enviar_notificacion_torneo_aprobado
@@ -26,7 +27,7 @@ class AprobarTorneoView(LoginRequiredMixin, View):
                 
             messages.success(request, f'El torneo "{torneo.nombre}" ha sido aprobado y publicado.')
         elif accion == 'rechazar':
-            torneo.estado = 'PENDIENTE'
+            torneo.estado = 'RECHAZADO'
             torneo.is_approved = False
             messages.warning(request, f'El torneo "{torneo.nombre}" ha sido rechazado.')
         else:
@@ -132,3 +133,51 @@ class RegistrarResultadoView(LoginRequiredMixin, View):
             messages.error(request, '❌ Los goles deben ser números enteros.')
 
         return redirect('negocio:torneo_detalle', pk=partido.torneo.id)
+
+from core.mixins import RoleRequiredMixin
+from negocio.forms import TorneoForm
+
+class SolicitarTorneoView(RoleRequiredMixin, View):
+    """Vista para que un DUEÑO solicite la creación de un nuevo torneo."""
+    allowed_roles = ['DUEÑO']
+
+    def get(self, request):
+        form = TorneoForm()
+        # Filtramos canchas del dueño logueado
+        from canchas.models import Cancha
+        form.fields['canchas'].queryset = Cancha.objects.filter(dueño=request.user)
+        return render(request, 'negocio/torneo_form.html', {'form': form})
+
+    def post(self, request):
+        form = TorneoForm(request.POST)
+        from canchas.models import Cancha
+        form.fields['canchas'].queryset = Cancha.objects.filter(dueño=request.user)
+        
+        if form.is_valid():
+            torneo = form.save(commit=False)
+            torneo.organizador = request.user
+            torneo.estado = 'PENDIENTE'
+            torneo.is_approved = False
+            torneo.save()
+            form.save_m2m()  # Guardar las canchas seleccionadas
+            messages.success(request, 'Solicitud de torneo enviada exitosamente al Administrador.')
+            return redirect('negocio:mis_torneos')
+        
+        return render(request, 'negocio/torneo_form.html', {'form': form})
+
+
+class MisTorneosView(RoleRequiredMixin, View):
+    """Vista para que un DUEÑO vea sus torneos (Pendientes, Publicados, Rechazados)."""
+    allowed_roles = ['DUEÑO']
+
+    def get(self, request):
+        torneos = Torneo.objects.filter(organizador=request.user).order_by('-fecha_inicio')
+        return render(request, 'negocio/mis_torneos.html', {'torneos': torneos})
+
+
+class TorneoListView(View):
+    """Vista pública para que cualquier usuario vea los torneos publicados y aprobados."""
+    def get(self, request):
+        torneos = Torneo.objects.filter(estado='PUBLICADO', is_approved=True).order_by('-fecha_inicio')
+        return render(request, 'negocio/torneo_list.html', {'torneos': torneos})
+

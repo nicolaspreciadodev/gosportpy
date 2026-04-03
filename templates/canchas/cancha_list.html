@@ -6,13 +6,16 @@
         <div>
             <h2 class="text-3xl font-bold text-white tracking-tight">Canchas</h2>
             <p class="text-gray-400 mt-1">Encuentra tu cancha ideal</p>
+        <div class="flex flex-col sm:flex-row gap-2 items-center">
+            <a href="{% url 'canchas:reporte_pdf' %}" class="bg-gray-800 text-gray-300 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar PDF">📄 PDF</a>
+            <a href="{% url 'canchas:reporte_excel' %}" class="bg-gray-800 text-gray-300 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar Excel">📊 EXCEL</a>
+            <a href="{% url 'canchas:reporte_word' %}" class="bg-gray-800 text-gray-300 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-700 hover:bg-gray-700 hover:text-white transition flex items-center justify-center" title="Descargar Word">📝 WORD</a>
+            {% if user.rol == 'DUEÑO' %}
+            <a href="{% url 'canchas:nueva' %}" class="bg-neon text-black font-bold px-5 py-2.5 rounded-xl hover:bg-green-300 transition flex items-center justify-center ml-2">
+                + Nueva Cancha
+            </a>
+            {% endif %}
         </div>
-        {% if user.rol == 'DUEÑO' %}
-        <a href="{% url 'canchas:nueva' %}"
-           class="bg-neon text-black font-bold px-5 py-2.5 rounded-xl hover:bg-green-300 transition">
-            + Nueva Cancha
-        </a>
-        {% endif %}
     </header>
 
     <!-- Filtros Avanzados -->
@@ -109,7 +112,7 @@
                 {% endif %}
                 <div class="absolute top-4 right-4 bg-black/60 backdrop-blur text-neon text-sm
                             px-3 py-1 rounded-full border border-neon/30 font-bold">
-                    ${{ cancha.precio }}/hr
+                    $ {{ cancha.precio|floatformat:"0" }} COP
                 </div>
                 <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-white text-xs
                             px-3 py-1.5 rounded-full border border-gray-700 font-medium tracking-wide">

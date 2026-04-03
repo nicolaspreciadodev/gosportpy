@@ -140,3 +140,106 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
         }
         
         return render(request, 'analytics.html', context)
+
+
+# ====================================================
+# EXPORTACIONES DE RESERVAS MULTIFORMATO
+# ====================================================
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import openpyxl
+from docx import Document
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+def get_reservas_por_rol(user):
+    """Devuelve las reservas permitidas dependiendo del perfil."""
+    if user.is_superuser or user.rol == 'ADMIN':
+        return Reserva.objects.all().order_by('-fecha', '-hora')
+    elif user.rol == 'DUEÑO':
+        return Reserva.objects.filter(cancha__dueño=user).order_by('-fecha', '-hora')
+    else:  # DEPORTISTA
+        return Reserva.objects.filter(usuario=user).order_by('-fecha', '-hora')
+
+
+class ReporteReservasPdfView(LoginRequiredMixin, View):
+    def get(self, request):
+        reservas = get_reservas_por_rol(request.user)
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.pdf"'
+
+        p = canvas.Canvas(response, pagesize=letter)
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(100, 750, f"Reporte de Reservas - GoSport2 ({request.user.rol})")
+        
+        p.setFont("Helvetica", 10)
+        y = 710
+        for idx, r in enumerate(reservas):
+            texto = f"{idx+1}. Cancha: {r.cancha.nombre} | Deportista: {r.usuario.username} | Fecha: {r.fecha} {r.hora} | Estado: {r.estado} | Pagado: {'Sí' if r.pagado else 'No'}"
+            p.drawString(80, y, texto)
+            y -= 20
+            if y < 50:  # Nueva página si se acaba el espacio
+                p.showPage()
+                p.setFont("Helvetica", 10)
+                y = 750
+
+        p.showPage()
+        p.save()
+
+        return response
+
+
+class ReporteReservasExcelView(LoginRequiredMixin, View):
+    def get(self, request):
+        reservas = get_reservas_por_rol(request.user)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.xlsx"'
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Reservas"
+        
+        ws.append(["ID", "Cancha", "Deportista", "Fecha", "Hora", "Estado", "Monto Total", "Pagado"])
+        
+        for r in reservas:
+            monto_total = r.factura.total if hasattr(r, 'factura') else 0.0
+            ws.append([
+                r.id, r.cancha.nombre, r.usuario.email, 
+                r.fecha, r.hora, r.estado, monto_total, 'Sí' if r.pagado else 'No'
+            ])
+            
+        wb.save(response)
+        return response
+
+
+class ReporteReservasWordView(LoginRequiredMixin, View):
+    def get(self, request):
+        reservas = get_reservas_por_rol(request.user)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.docx"'
+
+        doc = Document()
+        doc.add_heading(f'Reporte de Reservas ({request.user.rol}) - GoSport2', 0)
+        
+        table = doc.add_table(rows=1, cols=5)
+        table.style = 'Table Grid'
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'ID'
+        hdr_cells[1].text = 'Cancha'
+        hdr_cells[2].text = 'Deportista'
+        hdr_cells[3].text = 'Fecha'
+        hdr_cells[4].text = 'Estado'
+        
+        for r in reservas:
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(r.id)
+            row_cells[1].text = r.cancha.nombre
+            row_cells[2].text = r.usuario.get_full_name() or r.usuario.username
+            row_cells[3].text = f"{r.fecha} {r.hora.strftime('%H:%M')}"
+            row_cells[4].text = str(r.estado)
+            
+        doc.save(response)
+        return response

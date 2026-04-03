@@ -63,6 +63,47 @@
             {% endif %}
         </div>
         {% endif %}
+
+        <!-- Botones de Acción (Deportista / Inscribir Equipo) -->
+        {% if user.rol == 'DEPORTISTA' and torneo.estado == 'PUBLICADO' %}
+        <div class="mt-6 border-t border-gray-800 pt-6">
+            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="users" class="w-5 h-5 text-neon"></i>
+                Inscripciones
+            </h3>
+            
+            {% if torneo.equipos.count >= torneo.max_equipos %}
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-red-900/30 border border-red-500 text-red-400 rounded-lg">
+                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                Cupos Llenos
+            </div>
+            {% else %}
+                {% if request.user.equipos.count > 0 %}
+                <form action="{% url 'negocio:inscribir_torneo' torneo.id %}" method="post" class="flex flex-col sm:flex-row items-center gap-4">
+                    {% csrf_token %}
+                    <select name="equipo_id" required class="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl focus:border-neon focus:outline-none transition w-full sm:w-64">
+                        <option value="">-- Selecciona tu equipo --</option>
+                        {% for eq in request.user.equipos.all %}
+                            <option value="{{ eq.id }}">{{ eq.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="w-full sm:w-auto bg-neon text-dark font-bold px-6 py-2 rounded-xl hover:bg-green-300 transition shadow border border-neon/50">
+                        Inscribirse al Torneo
+                    </button>
+                    <span class="text-gray-400 text-sm ml-2">Quedan {{ torneo.max_equipos|add:"-1" }} cupos</span>
+                </form>
+                {% else %}
+                <div class="p-4 bg-gray-800 rounded-lg border border-gray-700 w-full flex items-center justify-between">
+                    <p class="text-gray-300">Debes pertenecer a un equipo para competir en torneos.</p>
+                    <a href="{% url 'negocio:crear_equipo' %}" class="bg-gray-700 text-white font-medium px-4 py-2 rounded-lg hover:bg-gray-600 border border-gray-600 transition shadow">
+                        Crear Equipo
+                    </a>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+
     </div>
 
     <!-- Tabla de Posiciones -->
