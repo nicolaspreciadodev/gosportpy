@@ -171,6 +171,14 @@ AUTH_USER_MODEL = 'usuarios.CustomUser'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# =============================================
+# SEGURIDAD Y SESIONES (Fase 15)
+# =============================================
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 3600  # 1 hora de duración máxima
+SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
 # =============================================
 # EMAIL — Configuración
 # =============================================

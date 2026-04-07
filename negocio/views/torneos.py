@@ -61,6 +61,10 @@ class InscribirEquipoView(LoginRequiredMixin, View):
         if equipo.torneos.filter(id=torneo.id).exists():
             messages.error(request, 'Tu equipo ya está inscrito en este torneo.')
             return redirect('dashboard')
+            
+        if torneo.equipos.count() >= torneo.max_equipos:
+            messages.error(request, 'El torneo ya ha alcanzado el límite máximo de equipos permitidos.')
+            return redirect('dashboard')
 
         equipo.torneos.add(torneo)
         
@@ -70,7 +74,8 @@ class InscribirEquipoView(LoginRequiredMixin, View):
         except Exception as ex:
             pass
             
-        messages.success(request, f'¡El equipo {equipo.nombre} ha sido inscrito exitosamente!')
+        precio = f"${torneo.precio_inscripcion:,.2f} COP" if torneo.precio_inscripcion else "Gratis"
+        messages.success(request, f'¡El equipo {equipo.nombre} ha sido pre-inscrito! Valor a pagar: {precio}. Por favor coordina el pago con el administrador.')
         return redirect('dashboard')
 
 
@@ -180,4 +185,72 @@ class TorneoListView(View):
     def get(self, request):
         torneos = Torneo.objects.filter(estado='PUBLICADO', is_approved=True).order_by('-fecha_inicio')
         return render(request, 'negocio/torneo_list.html', {'torneos': torneos})
+
+
+from negocio.models import SolicitudModificacionTorneo
+
+class SolicitarModificacionTorneoView(RoleRequiredMixin, View):
+    """Vista para que un dueño solicite la modificación de un torneo aprobado."""
+    allowed_roles = ['DUEÑO']
+
+    def get(self, request, pk):
+        torneo = get_object_or_404(Torneo, pk=pk)
+        if torneo.organizador != request.user:
+            messages.error(request, 'No tienes permiso para modificar este torneo.')
+            return redirect('dashboard')
+            
+        if not torneo.is_approved:
+            # Si no está aprobado, simplemente debería poder editarlo normalmente (si tuviéramos TorneoUpdateView)
+            messages.info(request, 'El torneo no está aprobado, puedes solicitar una edición directamente (próximamente).')
+            return redirect('negocio:mis_torneos')
+            
+        return render(request, 'negocio/solicitar_modificacion_torneo.html', {'torneo': torneo})
+
+    def post(self, request, pk):
+        torneo = get_object_or_404(Torneo, pk=pk)
+        if torneo.organizador != request.user:
+            messages.error(request, 'No tienes permiso para esto.')
+            return redirect('dashboard')
+
+        descripcion = request.POST.get('descripcion_cambio')
+        if not descripcion:
+            messages.error(request, 'Debes proveer una descripción del cambio.')
+            return redirect('negocio:solicitar_modificacion_torneo', pk=pk)
+
+        # Chequear si ya hay una pendiente
+        if SolicitudModificacionTorneo.objects.filter(torneo=torneo, estado='PENDIENTE').exists():
+            messages.warning(request, 'Ya tienes una solicitud de modificación pendiente para este torneo.')
+            return redirect('negocio:mis_torneos')
+
+        SolicitudModificacionTorneo.objects.create(
+            torneo=torneo,
+            descripcion_cambio=descripcion
+        )
+        
+        messages.success(request, 'Solicitud de modificación enviada al administrador exitosamente.')
+        return redirect('negocio:mis_torneos')
+
+
+@method_decorator(user_passes_test(lambda u: u.is_staff), name='dispatch')
+class ResponderSolicitudModificacionView(LoginRequiredMixin, View):
+    """Vista para que ADMIN acepte o rechace la solicitud de modificación."""
+    def post(self, request, pk):
+        solicitud = get_object_or_404(SolicitudModificacionTorneo, pk=pk)
+        accion = request.POST.get('action')
+
+        if accion == 'aprobar':
+            solicitud.estado = 'APROBADO'
+            # Permitimos que la edite reviritiendo a PENDIENTE
+            solicitud.torneo.estado = 'PENDIENTE'
+            solicitud.torneo.is_approved = False
+            solicitud.torneo.save()
+            solicitud.save()
+            messages.success(request, f'Solicitud aprobada. El torneo "{solicitud.torneo.nombre}" ahora puede ser editado por el organizador y requiere nueva aprobación.')
+        
+        elif accion == 'rechazar':
+            solicitud.estado = 'RECHAZADO'
+            solicitud.save()
+            messages.warning(request, f'Solicitud de modificación rechazada.')
+            
+        return redirect('dashboard')
 
