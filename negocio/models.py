@@ -17,6 +17,7 @@ class Torneo(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
     is_approved = models.BooleanField(default=False)
     organizador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='torneos_organizados')
+    precio_inscripcion = models.DecimalField(max_digits=12, decimal_places=2, default=50000.00)
     
     # Nuevos campos de Liga
     max_equipos = models.PositiveIntegerField(default=8)
@@ -155,3 +156,22 @@ class PosicionEquipo(models.Model):
     class Meta:
         ordering = ['-puntos', '-partidos_ganados', '-goles_favor']
         unique_together = ('torneo', 'equipo')
+
+class SolicitudModificacionTorneo(models.Model):
+    """
+    Representa una solicitud enviada por un dueño (organizador) al administrador
+    para modificar un torneo que ya ha sido aprobado.
+    """
+    ESTADO_CHOICES = (
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADO', 'Aprobado'),
+        ('RECHAZADO', 'Rechazado'),
+    )
+    torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='solicitudes_modificacion')
+    descripcion_cambio = models.TextField(help_text="Explique detalladamente qué cambios necesita hacer en el torneo.")
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Solicitud para {self.torneo.nombre} ({self.get_estado_display()})"
+
