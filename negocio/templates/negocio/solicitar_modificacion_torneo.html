@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 px-4">
+    <div class="mb-8">
+        <a href="{% url 'negocio:mis_torneos' %}" class="text-gray-400 hover:text-white transition flex items-center gap-2 mb-4 font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Volver a Mis Torneos
+        </a>
+        <h2 class="text-3xl font-bold text-white mb-2">Solicitar Modificación de Torneo</h2>
+        <p class="text-gray-400">El torneo <strong>{{ torneo.nombre }}</strong> ya ha sido aprobado y publicado. Si deseas cambiar el formato, el precio o las fechas, debes enviar una solicitud al administrador.</p>
+    </div>
+
+    <!-- Alertas Django -->
+    {% if messages %}
+    <div class="mb-6 space-y-3">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg flex items-center gap-3 shadow-md {% if message.tags == 'error' %}bg-red-900/30 border border-red-500/50 text-red-400{% elif message.tags == 'warning' %}bg-yellow-900/30 border border-yellow-500/50 text-yellow-400{% else %}bg-green-900/30 border border-green-500/50 text-green-400{% endif %}">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>{{ message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl relative group">
+        <div class="absolute inset-0 bg-yellow-500 opacity-0 group-hover:opacity-5 transition duration-500 rounded-xl"></div>
+        <div class="p-8 relative z-10">
+            <form method="post" action="{% url 'negocio:solicitar_modificacion_torneo' torneo.pk %}" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="descripcion_cambio" class="block text-sm font-semibold text-gray-300 mb-2">Describe los cambios requeridos:</label>
+                    <textarea name="descripcion_cambio" id="descripcion_cambio" rows="5" required
+                              class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-4 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all font-sans outline-none"
+                              placeholder="Ejemplo: Necesito aumentar el límite de equipos a 16 y posponer la fecha de inicio 2 semanas."></textarea>
+                    <p class="text-xs text-gray-500 mt-2">La administración revisará esta solicitud. Si es aprobada, el torneo volverá a tu panel de configuración para que lo edites.</p>
+                </div>
+
+                <div class="pt-4 border-t border-gray-800 flex justify-end">
+                    <button type="submit" class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.3)] transition transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

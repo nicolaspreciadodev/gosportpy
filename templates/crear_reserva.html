@@ -99,13 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize Flatpickr
-    let maxDateLimits = new Date();
-    maxDateLimits.setDate(maxDateLimits.getDate() + 30); // 30 days max limit rule
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30); // 30 days max limit rule
     
     flatpickr(fechaInput, {
         locale: "es",
         minDate: "today",
-        maxDate: maxDateLimits,
+        maxDate: maxDate,
         altInput: true,
         altFormat: "d \\de F Y",
         dateFormat: "Y-m-d",

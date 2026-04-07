@@ -104,12 +104,14 @@
                     transition-all duration-500 flex flex-col group">
 
             <div class="h-48 bg-black relative overflow-hidden">
-                {% if cancha.imagen %}
-                    <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}"
-                         class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700">
-                {% else %}
-                    <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900"></div>
-                {% endif %}
+                <div class="relative h-56 overflow-hidden bg-gray-900 flex items-center justify-center">
+                    {% if cancha.imagen %}
+                        <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}" 
+                             class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
+                    {% else %}
+                        <span class="text-gray-500 text-lg font-bold uppercase tracking-widest">{{ cancha.deporte.nombre|default:"Cancha" }}</span>
+                    {% endif %}
+                </div>
                 <div class="absolute top-4 right-4 bg-black/60 backdrop-blur text-neon text-sm
                             px-3 py-1 rounded-full border border-neon/30 font-bold">
                     $ {{ cancha.precio|floatformat:"0" }} COP
