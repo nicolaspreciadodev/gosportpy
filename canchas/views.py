@@ -53,24 +53,19 @@ class CanchaListView(View):
             
         if fecha:
             try:
-                # Validar disponibilidad por día de la semana
                 fecha_obj = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
-                dia_semana_num = fecha_obj.weekday()  # Lunes 0, Domingo 6
-                # Solo canchas que tienen disponibilidad ese día
+                dia_semana_num = fecha_obj.weekday()
                 canchas = canchas.filter(disponibilidades__dia_semana=dia_semana_num).distinct()
             except ValueError:
                 pass
                 
-        # Ordenamiento dinámico
         if orden == 'precio_asc':
             canchas = canchas.order_by('precio')
         elif orden == 'precio_desc':
             canchas = canchas.order_by('-precio')
         elif orden == 'mejor_calificadas':
-            # Usa el related_name calificaciones del modelo
             canchas = canchas.annotate(promedio=Avg('calificaciones__puntuacion')).order_by('-promedio')
         elif orden == 'mas_reservadas':
-            # Usa el related_name reservas de Cancha (definido en negocio.Reserva)
             canchas = canchas.annotate(num_reservas=Count('reservas')).order_by('-num_reservas')
 
         ciudades_disponibles = Cancha.objects.values_list('ciudad', flat=True).distinct()
@@ -91,13 +86,7 @@ class CanchaListView(View):
 
 
 class CanchaDetailView(View):
-    """Detalle de una cancha con disponibilidad, botón de reserva y calificaciones.
-
-    Context:
-        cancha: instancia de Cancha con detalles completos
-        calificaciones: lista de Calificacion ordenadas por fecha descendente
-        puede_calificar: bool indicando si el usuario autenticado puede calificar
-    """
+    """Detalle de una cancha con disponibilidad, botón de reserva y calificaciones."""
 
     def get(self, request, pk):
         cancha = get_object_or_404(
@@ -118,11 +107,7 @@ class CanchaDetailView(View):
 
 
 class CanchaCreateView(RoleRequiredMixin, View):
-    """Permite a un DUEÑO crear una nueva cancha.
-
-    El campo `dueño` se asigna automáticamente desde el usuario en sesión
-    a través del service layer (principio DRY).
-    """
+    """Permite a un DUEÑO crear una nueva cancha."""
     allowed_roles = ['DUEÑO']
 
     def get(self, request):
@@ -140,14 +125,10 @@ class CanchaCreateView(RoleRequiredMixin, View):
 
 
 class CanchaUpdateView(RoleRequiredMixin, View):
-    """Permite a un DUEÑO editar su propia cancha.
-
-    Verifica propiedad antes de mostrar o procesar el formulario.
-    """
+    """Permite a un DUEÑO editar su propia cancha."""
     allowed_roles = ['DUEÑO']
 
     def _get_cancha_propia(self, pk, usuario):
-        """Helper: obtiene la cancha y valida propiedad."""
         cancha = get_object_or_404(Cancha, pk=pk)
         services.verificar_propiedad(cancha, usuario)
         return cancha
@@ -185,7 +166,7 @@ class CanchaDeleteView(RoleRequiredMixin, View):
         messages.success(request, f'Cancha "{nombre}" eliminada correctamente.')
         return redirect('canchas:lista')
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import Disponibilidad
 from .forms import DisponibilidadForm
 
@@ -208,7 +189,6 @@ class GestionarDisponibilidadView(RoleRequiredMixin, View):
         cancha = get_object_or_404(Cancha, pk=pk)
         services.verificar_propiedad(cancha, request.user)
 
-        # Manejar eliminación
         if 'delete_id' in request.POST:
             disp_id = request.POST.get('delete_id')
             cancha.disponibilidades.filter(id=disp_id).delete()
@@ -250,40 +230,12 @@ class DisponibilidadSlotsView(View):
             return JsonResponse({'error': str(e)}, status=400)
 
 
-# ===== FASE 11: CALIFICACIONES =====
-
 class CalificarCanchaView(View):
-    """Vista para que un usuario califique una cancha (solo POST).
-
-    Validaciones:
-    - Usuario debe estar autenticado
-    - Usuario debe haber completado una reserva en esa cancha
-    - No existe calificación previa del usuario para la cancha
-    - Puntuación debe ser 1-5
-
-    Flujo:
-        POST /canchas/<pk>/calificar/
-            puntuacion: int (1-5)
-            comentario: str opcional
-
-        → Redirige a cancha_detail con mensaje de éxito o error
-    """
+    """Vista para que un usuario califique una cancha (solo POST)."""
 
     def post(self, request, pk):
-        """Registra una calificación para la cancha.
-
-        Args:
-            request: HttpRequest con POST parameters:
-                - puntuacion: int (1-5) requerido
-                - comentario: str opcional
-            pk: ID de la cancha
-
-        Returns:
-            Redirect a cancha_detail con mensaje
-        """
         cancha = get_object_or_404(Cancha, pk=pk)
 
-        # Requiere autenticación
         if not request.user.is_authenticated:
             messages.error(request, 'Debes iniciar sesión para calificar.')
             return redirect('login')
@@ -291,56 +243,90 @@ class CalificarCanchaView(View):
         puntuacion = request.POST.get('puntuacion')
         comentario = request.POST.get('comentario', '')
 
-        # Validar que esté el campo
         if not puntuacion:
             messages.error(request, 'Debes seleccionar una puntuación.')
             return redirect('canchas:detalle', pk=pk)
 
         try:
             puntuacion = int(puntuacion)
-
-            # Usar service layer
             services.crear_calificacion(
                 usuario=request.user,
                 cancha=cancha,
                 puntuacion=puntuacion,
                 comentario=comentario
             )
-
             messages.success(
                 request,
                 f'✅ ¡Gracias por calificar {cancha.nombre}! Tu reseña fue publicada.'
             )
         except PermissionDenied as e:
             messages.error(request, f'❌ {str(e)}')
-        except Exception as e:  # ValidationError u otro
+        except Exception as e:
             messages.error(request, f'❌ Error: {str(e)}')
 
         return redirect('canchas:detalle', pk=pk)
 
+
+# ====================================================================
+# REPORTES DE CANCHAS (CSV, PDF, EXCEL, WORD)
+# ====================================================================
+
+import io
 import csv
-from django.http import HttpResponse
+import logging
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from negocio.models import Reserva
+import openpyxl
+from docx import Document as DocxDocument
+
+logger = logging.getLogger(__name__)
+
+MIME_PDF = 'application/pdf'
+MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+MIME_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+
+from django.http import JsonResponse, HttpResponse, FileResponse
+def _build_file_response(buffer, filename, content_type):
+    """Construye FileResponse seguro para archivos binarios."""
+    buffer.seek(0)
+    response = FileResponse(buffer, as_attachment=True, filename=filename, content_type=content_type)
+    return response
+
+
+def _get_canchas_filtradas(request):
+    """Aplica filtros comunes a queryset de canchas."""
+    canchas = Cancha.objects.select_related('deporte', 'dueño').all()
+    deporte_id = request.GET.get('deporte')
+    q = request.GET.get('q')
+    min_precio = request.GET.get('min_precio')
+    max_precio = request.GET.get('max_precio')
+
+    if deporte_id:
+        canchas = canchas.filter(deporte__id=deporte_id)
+    if q:
+        canchas = canchas.filter(nombre__icontains=q)
+    if min_precio:
+        try:
+            canchas = canchas.filter(precio__gte=float(min_precio))
+        except ValueError:
+            pass
+    if max_precio:
+        try:
+            canchas = canchas.filter(precio__lte=float(max_precio))
+        except ValueError:
+            pass
+    return canchas
+
 
 class ReporteCanchasView(View):
-    """Genera un reporte CSV de las canchas basado en los filtros actuales."""
-    
-    def get(self, request):
-        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
-        deporte_id = request.GET.get('deporte')
-        q = request.GET.get('q')
-        min_precio = request.GET.get('min_precio')
-        max_precio = request.GET.get('max_precio')
+    """Genera un reporte CSV de las canchas."""
 
-        if deporte_id:
-            canchas = canchas.filter(deporte__id=deporte_id)
-        if q:
-            canchas = canchas.filter(nombre__icontains=q)
-        if min_precio:
-            try: canchas = canchas.filter(precio__gte=float(min_precio))
-            except ValueError: pass
-        if max_precio:
-            try: canchas = canchas.filter(precio__lte=float(max_precio))
-            except ValueError: pass
+    def get(self, request):
+        canchas = _get_canchas_filtradas(request)
 
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="reporte_canchas.csv"'
@@ -349,169 +335,139 @@ class ReporteCanchasView(View):
         writer.writerow(['ID', 'Nombre', 'Deporte', 'Precio', 'Dueño'])
 
         for c in canchas:
-            writer.writerow([c.id, c.nombre, c.deporte.nombre if c.deporte else 'N/A', c.precio, c.dueño.email if c.dueño else 'N/A'])
-
-        return response
-
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from django.db.models import Count, Sum
-from negocio.models import Reserva
-
-class ReporteCanchasPdfView(View):
-    """Genera un reporte PDF de Auditoría de las canchas con estimación de ingresos."""
-    
-    def get(self, request):
-        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
-        # Filtros similares a la vista CSV
-        deporte_id = request.GET.get('deporte')
-        q = request.GET.get('q')
-
-        if deporte_id:
-            canchas = canchas.filter(deporte__id=deporte_id)
-        if q:
-            canchas = canchas.filter(nombre__icontains=q)
-
-        styles = getSampleStyleSheet()
-        elements = []
-        styles = getSampleStyleSheet()
-
-        # Título
-        elements.append(Paragraph("Informe de Auditoría de Canchas e Ingresos", styles['Title']))
-        elements.append(Spacer(1, 20))
-        elements.append(Paragraph("A continuación se presenta un resumen de las canchas registradas en la plataforma, junto con su historial de reservas y un cálculo estimado del ingreso potencial en COP.", styles['Normal']))
-        elements.append(Spacer(1, 20))
-
-        # Tabla
-        data = [['ID', 'Cancha', 'Deporte', 'Dueño', 'Reservas', 'Ingreso Est (COP)']]
-        
-        total_ingresos = 0
-        
-        for c in canchas:
-            reservas_completadas = Reserva.objects.filter(cancha=c).count()
-            ingreso_est = float(c.precio) * reservas_completadas
-            total_ingresos += ingreso_est
-            
-            deporte = c.deporte.nombre if c.deporte else 'N/A'
-            dueño = c.dueño.email if c.dueño else 'N/A'
-            data.append([
-                str(c.id), 
-                c.nombre, 
-                deporte, 
-                dueño, 
-                str(reservas_completadas), 
-                f"${ingreso_est:,.2f}"
-            ])
-
-        data.append(['', '', '', '', 'TOTAL GENERAL:', f"${total_ingresos:,.2f}"])
-
-        t = Table(data, colWidths=[30, 150, 80, 120, 60, 100])
-        t.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d1117')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#00ff88')),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#1f2937')),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.whitesmoke),
-            ('GRID', (0, 0), (-1, -2), 1, colors.HexColor('#374151')),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#00ff88')),
-            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ]))
-        
-        import io
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        
-        elements.append(t)
-        doc.build(elements)
-
-        buffer.seek(0)
-        response = HttpResponse(buffer.read(), content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="auditoria_canchas.pdf"'
-        
-        return response
-
-import openpyxl
-from docx import Document
-
-class ReporteCanchasExcelView(View):
-    """Genera un reporte Excel (.xlsx) de las canchas."""
-    
-    def get(self, request):
-        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
-        # Filtros
-        deporte_id = request.GET.get('deporte')
-        q = request.GET.get('q')
-        if deporte_id:
-            canchas = canchas.filter(deporte__id=deporte_id)
-        if q:
-            canchas = canchas.filter(nombre__icontains=q)
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Canchas"
-        
-        # Headers
-        ws.append(["ID", "Nombre", "Deporte", "Precio", "Ubicación", "Ciudad", "Dueño"])
-        
-        for c in canchas:
-            ws.append([
-                c.id, c.nombre, 
-                c.deporte.nombre if c.deporte else 'N/A', 
-                c.precio, c.ubicacion, c.ciudad,
+            writer.writerow([
+                c.id, c.nombre,
+                c.deporte.nombre if c.deporte else 'N/A',
+                c.precio,
                 c.dueño.email if c.dueño else 'N/A'
             ])
 
-        import io
-        buffer = io.BytesIO()
-        wb.save(buffer)
-        buffer.seek(0)
-        
-        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.xlsx"'
         return response
+
+
+class ReporteCanchasPdfView(View):
+    """Genera un reporte PDF de Auditoría de canchas con ingresos estimados."""
+
+    def get(self, request):
+        try:
+            canchas = _get_canchas_filtradas(request)
+            print(f"DEBUG - Cantidad de canchas: {canchas.count()}")
+
+            elements = []
+            styles = getSampleStyleSheet()
+
+            elements.append(Paragraph("Informe de Auditoría de Canchas e Ingresos", styles['Title']))
+            elements.append(Spacer(1, 20))
+            elements.append(Paragraph(
+                "Resumen de canchas registradas con historial de reservas e ingreso potencial en COP.",
+                styles['Normal']
+            ))
+            elements.append(Spacer(1, 20))
+
+            data = [['ID', 'Cancha', 'Deporte', 'Dueño', 'Reservas', 'Ingreso Est (COP)']]
+            total_ingresos = 0
+
+            for c in canchas:
+                num_reservas = Reserva.objects.filter(cancha=c).count()
+                ingreso_est = float(c.precio) * num_reservas
+                total_ingresos += ingreso_est
+
+                data.append([
+                    str(c.id), c.nombre,
+                    c.deporte.nombre if c.deporte else 'N/A',
+                    c.dueño.email if c.dueño else 'N/A',
+                    str(num_reservas), f"${ingreso_est:,.2f}"
+                ])
+
+            data.append(['', '', '', '', 'TOTAL:', f"${total_ingresos:,.2f}"])
+
+            t = Table(data, colWidths=[30, 150, 80, 120, 60, 100])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d1117')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#00ff88')),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#1f2937')),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.whitesmoke),
+                ('GRID', (0, 0), (-1, -2), 1, colors.HexColor('#374151')),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#00ff88')),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ]))
+
+            elements.append(t)
+
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            doc.build(elements)
+
+            return _build_file_response(buffer, 'auditoria_canchas.pdf', MIME_PDF)
+        except Exception as e:
+            print(f'ERROR GENERANDO PDF: {e}')
+            logger.error(f"Error generando PDF de canchas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)
+
+
+class ReporteCanchasExcelView(View):
+    """Genera un reporte Excel (.xlsx) de las canchas."""
+
+    def get(self, request):
+        try:
+            canchas = _get_canchas_filtradas(request)
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Canchas"
+
+            ws.append(["ID", "Nombre", "Deporte", "Precio", "Ubicación", "Ciudad", "Dueño"])
+
+            for c in canchas:
+                ws.append([
+                    c.id, c.nombre,
+                    c.deporte.nombre if c.deporte else 'N/A',
+                    float(c.precio), c.ubicacion, c.ciudad,
+                    c.dueño.email if c.dueño else 'N/A'
+                ])
+
+            buffer = io.BytesIO()
+            wb.save(buffer)
+
+            return _build_file_response(buffer, 'reporte_canchas.xlsx', MIME_XLSX)
+        except Exception as e:
+            logger.error(f"Error generando Excel de canchas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)
 
 
 class ReporteCanchasWordView(View):
     """Genera un reporte Word (.docx) de las canchas."""
-    
+
     def get(self, request):
-        canchas = Cancha.objects.select_related('deporte', 'dueño').all()
-        # Filtros
-        deporte_id = request.GET.get('deporte')
-        q = request.GET.get('q')
-        if deporte_id:
-            canchas = canchas.filter(deporte__id=deporte_id)
-        if q:
-            canchas = canchas.filter(nombre__icontains=q)
+        try:
+            canchas = _get_canchas_filtradas(request)
 
-        doc = Document()
-        doc.add_heading('Reporte de Canchas - GoSport2', 0)
-        
-        table = doc.add_table(rows=1, cols=4)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'ID'
-        hdr_cells[1].text = 'Nombre'
-        hdr_cells[2].text = 'Deporte'
-        hdr_cells[3].text = 'Dueño'
-        
-        for c in canchas:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(c.id)
-            row_cells[1].text = c.nombre
-            row_cells[2].text = c.deporte.nombre if c.deporte else 'N/A'
-            row_cells[3].text = c.dueño.email if c.dueño else 'N/A'
+            doc = DocxDocument()
+            doc.add_heading('Reporte de Canchas - GoSport2', 0)
 
-        import io
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        
-        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.docx"'
-        return response
+            table = doc.add_table(rows=1, cols=4)
+            table.style = 'Table Grid'
+            hdr_cells = table.rows[0].cells
+            hdr_cells[0].text = 'ID'
+            hdr_cells[1].text = 'Nombre'
+            hdr_cells[2].text = 'Deporte'
+            hdr_cells[3].text = 'Dueño'
+
+            for c in canchas:
+                row_cells = table.add_row().cells
+                row_cells[0].text = str(c.id)
+                row_cells[1].text = c.nombre
+                row_cells[2].text = c.deporte.nombre if c.deporte else 'N/A'
+                row_cells[3].text = c.dueño.email if c.dueño else 'N/A'
+
+            buffer = io.BytesIO()
+            doc.save(buffer)
+
+            return _build_file_response(buffer, 'reporte_canchas.docx', MIME_DOCX)
+        except Exception as e:
+            logger.error(f"Error generando Word de canchas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)

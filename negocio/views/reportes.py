@@ -1,14 +1,44 @@
+import io
 import csv
 import json
+import logging
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.views import View
 from core.mixins import RoleRequiredMixin
 from canchas.models import Cancha
 from negocio.models import Reserva, Torneo
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import openpyxl
+from docx import Document
+
+logger = logging.getLogger(__name__)
+
+# ====================================================================
+# MIME TYPES CONSTANTES
+# ====================================================================
+MIME_PDF = 'application/pdf'
+MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+MIME_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+
+def build_download_response(buffer, filename, content_type):
+    """Construye un FileResponse seguro para descarga de archivos binarios."""
+    buffer.seek(0)
+    response = FileResponse(buffer, as_attachment=True, filename=filename, content_type=content_type)
+    # FileResponse handles Content-Disposition appropriately across browsers
+    return response
+
+
+# ====================================================================
+# REPORTES CSV (DUEÑO)
+# ====================================================================
 
 class ReporteReservasView(RoleRequiredMixin, View):
     allowed_roles = ['DUEÑO']
@@ -39,7 +69,7 @@ class ReporteReservasView(RoleRequiredMixin, View):
         writer.writerow(['ID', 'Cancha', 'Deportista', 'Fecha', 'Hora', 'Estado', 'Pagado'])
 
         for r in reservas:
-            writer.writerow([r.id, r.cancha.nombre, r.usuario.email, r.fecha, r.hora, r.estado, 'Sí' if r.pagado else 'No'])
+            writer.writerow([r.id, r.cancha.nombre, r.usuario.email, r.fecha, r.hora, r.estado, 'Si' if r.pagado else 'No'])
 
         return response
 
@@ -66,12 +96,12 @@ class ReporteTorneosView(RoleRequiredMixin, View):
         return response
 
 
+# ====================================================================
+# PANEL ANALYTICS (DUEÑO)
+# ====================================================================
+
 class PanelAnalyticsView(RoleRequiredMixin, View):
-    """Panel estadístico para el DUEÑO.
-    
-    Calcula ingresos (basados en reservas pagadas/completadas)
-    y genera JSON para ser leídos por Chart.js en el frontend.
-    """
+    """Panel estadístico para el DUEÑO."""
     allowed_roles = ['DUEÑO']
     
     def get(self, request):
@@ -80,19 +110,16 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
         
         canchas_dueño = Cancha.objects.filter(dueño=request.user)
         
-        # Reservas históricas válidas para ingreso (Pagadas o Completadas)
         reservas_ingresos = Reserva.objects.filter(
             cancha__in=canchas_dueño
         ).filter(
             Q(pagado=True) | Q(estado='COMPLETADA')
         )
         
-        # 1. Ingresos Totales Históricos
         ingresos_totales = reservas_ingresos.aggregate(
             total=Sum('factura__total')
         )['total'] or 0.0
 
-        # 2. Ingresos del Mes Actual
         reservas_mes = reservas_ingresos.filter(
             fecha__year=ahora.year, 
             fecha__month=ahora.month
@@ -101,7 +128,6 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
             total=Sum('factura__total')
         )['total'] or 0.0
         
-        # 3. Reservas Confirmadas Últimos 30 días
         reservas_ultimos_30 = Reserva.objects.filter(
             cancha__in=canchas_dueño,
             fecha__gte=hace_30_dias.date(),
@@ -109,7 +135,6 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
         )
         total_reservas_30_dias = reservas_ultimos_30.count()
         
-        # 4. Datos Gráfico: Reservas por Día (Últimos 30)
         reservas_por_dia = reservas_ultimos_30.values('fecha').annotate(
             cantidad=Count('id')
         ).order_by('fecha')
@@ -117,7 +142,6 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
         dias_labels = [r['fecha'].strftime('%d %b') for r in reservas_por_dia]
         dias_data = [r['cantidad'] for r in reservas_por_dia]
         
-        # 5. Datos Gráfico: Reservas por Cancha (Doughnut)
         canchas_populares = Cancha.objects.filter(
             dueño=request.user
         ).annotate(
@@ -131,8 +155,6 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
             'ingresos_totales': float(ingresos_totales),
             'ingresos_mes': float(ingresos_mes),
             'total_reservas_30_dias': total_reservas_30_dias,
-            
-            # JSON Data para Chart.js
             'dias_labels_json': json.dumps(dias_labels),
             'dias_data_json': json.dumps(dias_data),
             'canchas_labels_json': json.dumps(canchas_labels),
@@ -142,115 +164,106 @@ class PanelAnalyticsView(RoleRequiredMixin, View):
         return render(request, 'analytics.html', context)
 
 
-# ====================================================
-# EXPORTACIONES DE RESERVAS MULTIFORMATO
-# ====================================================
-
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-import openpyxl
-from docx import Document
-from django.contrib.auth.mixins import LoginRequiredMixin
+# ====================================================================
+# EXPORTACIONES MULTIFORMATO DE RESERVAS (TODOS LOS ROLES)
+# ====================================================================
 
 def get_reservas_por_rol(user):
     """Devuelve las reservas permitidas dependiendo del perfil."""
     if user.is_superuser or user.rol == 'ADMIN':
-        return Reserva.objects.all().order_by('-fecha', '-hora')
+        return Reserva.objects.select_related('cancha', 'usuario', 'factura').all().order_by('-fecha', '-hora')
     elif user.rol == 'DUEÑO':
-        return Reserva.objects.filter(cancha__dueño=user).order_by('-fecha', '-hora')
-    else:  # DEPORTISTA
-        return Reserva.objects.filter(usuario=user).order_by('-fecha', '-hora')
+        return Reserva.objects.select_related('cancha', 'usuario', 'factura').filter(cancha__dueño=user).order_by('-fecha', '-hora')
+    else:
+        return Reserva.objects.select_related('cancha', 'usuario', 'factura').filter(usuario=user).order_by('-fecha', '-hora')
 
 
 class ReporteReservasPdfView(LoginRequiredMixin, View):
     def get(self, request):
-        reservas = get_reservas_por_rol(request.user)
+        try:
+            reservas = get_reservas_por_rol(request.user)
+            buffer = io.BytesIO()
 
-        import io
-        buffer = io.BytesIO()
+            p = canvas.Canvas(buffer, pagesize=letter)
+            p.setFont("Helvetica-Bold", 16)
+            p.drawString(100, 750, f"Reporte de Reservas - GoSport2 ({request.user.rol})")
+            
+            p.setFont("Helvetica", 10)
+            y = 710
+            for idx, r in enumerate(reservas):
+                texto = f"{idx+1}. {r.cancha.nombre} | {r.usuario.username} | {r.fecha} {r.hora} | {r.estado} | {'Pagado' if r.pagado else 'Pendiente'}"
+                p.drawString(60, y, texto)
+                y -= 18
+                if y < 50:
+                    p.showPage()
+                    p.setFont("Helvetica", 10)
+                    y = 750
 
-        p = canvas.Canvas(buffer, pagesize=letter)
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(100, 750, f"Reporte de Reservas - GoSport2 ({request.user.rol})")
-        
-        p.setFont("Helvetica", 10)
-        y = 710
-        for idx, r in enumerate(reservas):
-            texto = f"{idx+1}. Cancha: {r.cancha.nombre} | Deportista: {r.usuario.username} | Fecha: {r.fecha} {r.hora} | Estado: {r.estado} | Pagado: {'Sí' if r.pagado else 'No'}"
-            p.drawString(80, y, texto)
-            y -= 20
-            if y < 50:  # Nueva página si se acaba el espacio
-                p.showPage()
-                p.setFont("Helvetica", 10)
-                y = 750
+            p.showPage()
+            p.save()
 
-        p.showPage()
-        p.save()
-
-        buffer.seek(0)
-        response = HttpResponse(buffer.read(), content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.pdf"'
-
-        return response
+            return build_download_response(buffer, 'reporte_reservas.pdf', MIME_PDF)
+        except Exception as e:
+            logger.error(f"Error generando PDF de reservas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)
 
 
 class ReporteReservasExcelView(LoginRequiredMixin, View):
     def get(self, request):
-        reservas = get_reservas_por_rol(request.user)
+        try:
+            reservas = get_reservas_por_rol(request.user)
 
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Reservas"
-        
-        ws.append(["ID", "Cancha", "Deportista", "Fecha", "Hora", "Estado", "Monto Total", "Pagado"])
-        
-        for r in reservas:
-            monto_total = r.factura.total if hasattr(r, 'factura') else 0.0
-            ws.append([
-                r.id, r.cancha.nombre, r.usuario.email, 
-                r.fecha, r.hora, r.estado, monto_total, 'Sí' if r.pagado else 'No'
-            ])
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Reservas"
             
-        import io
-        buffer = io.BytesIO()
-        wb.save(buffer)
-        buffer.seek(0)
-        
-        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.xlsx"'
-        return response
+            ws.append(["ID", "Cancha", "Deportista", "Fecha", "Hora", "Estado", "Monto Total", "Pagado"])
+            
+            for r in reservas:
+                monto = float(r.factura.total) if hasattr(r, 'factura') and r.factura else 0.0
+                ws.append([
+                    r.id, r.cancha.nombre, r.usuario.email, 
+                    str(r.fecha), str(r.hora), r.estado, monto, 'Si' if r.pagado else 'No'
+                ])
+                
+            buffer = io.BytesIO()
+            wb.save(buffer)
+
+            return build_download_response(buffer, 'reporte_reservas.xlsx', MIME_XLSX)
+        except Exception as e:
+            logger.error(f"Error generando Excel de reservas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)
 
 
 class ReporteReservasWordView(LoginRequiredMixin, View):
     def get(self, request):
-        reservas = get_reservas_por_rol(request.user)
+        try:
+            reservas = get_reservas_por_rol(request.user)
 
-        doc = Document()
-        doc.add_heading(f'Reporte de Reservas ({request.user.rol}) - GoSport2', 0)
-        
-        table = doc.add_table(rows=1, cols=5)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'ID'
-        hdr_cells[1].text = 'Cancha'
-        hdr_cells[2].text = 'Deportista'
-        hdr_cells[3].text = 'Fecha'
-        hdr_cells[4].text = 'Estado'
-        
-        for r in reservas:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(r.id)
-            row_cells[1].text = r.cancha.nombre
-            row_cells[2].text = r.usuario.get_full_name() or r.usuario.username
-            row_cells[3].text = f"{r.fecha} {r.hora.strftime('%H:%M')}"
-            row_cells[4].text = str(r.estado)
+            doc = Document()
+            doc.add_heading(f'Reporte de Reservas ({request.user.rol}) - GoSport2', 0)
             
-        import io
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        
-        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.docx"'
-        
-        return response
+            table = doc.add_table(rows=1, cols=5)
+            table.style = 'Table Grid'
+            hdr_cells = table.rows[0].cells
+            hdr_cells[0].text = 'ID'
+            hdr_cells[1].text = 'Cancha'
+            hdr_cells[2].text = 'Deportista'
+            hdr_cells[3].text = 'Fecha'
+            hdr_cells[4].text = 'Estado'
+            
+            for r in reservas:
+                row_cells = table.add_row().cells
+                row_cells[0].text = str(r.id)
+                row_cells[1].text = r.cancha.nombre
+                row_cells[2].text = r.usuario.get_full_name() or r.usuario.username
+                row_cells[3].text = f"{r.fecha} {r.hora.strftime('%H:%M')}"
+                row_cells[4].text = str(r.estado)
+                
+            buffer = io.BytesIO()
+            doc.save(buffer)
+
+            return build_download_response(buffer, 'reporte_reservas.docx', MIME_DOCX)
+        except Exception as e:
+            logger.error(f"Error generando Word de reservas: {e}")
+            return HttpResponse(f"Error generando reporte: {e}", status=500)
