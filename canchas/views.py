@@ -353,54 +353,86 @@ class ReporteCanchasView(View):
 
         return response
 
-from reportlab.pdfgen import canvas
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from django.db.models import Count, Sum
+from negocio.models import Reserva
 
 class ReporteCanchasPdfView(View):
-    """Genera un reporte PDF de las canchas basado en los filtros actuales."""
+    """Genera un reporte PDF de Auditoría de las canchas con estimación de ingresos."""
     
     def get(self, request):
         canchas = Cancha.objects.select_related('deporte', 'dueño').all()
         # Filtros similares a la vista CSV
         deporte_id = request.GET.get('deporte')
         q = request.GET.get('q')
-        min_precio = request.GET.get('min_precio')
-        max_precio = request.GET.get('max_precio')
 
         if deporte_id:
             canchas = canchas.filter(deporte__id=deporte_id)
         if q:
             canchas = canchas.filter(nombre__icontains=q)
-        if min_precio:
-            try: canchas = canchas.filter(precio__gte=float(min_precio))
-            except ValueError: pass
-        if max_precio:
-            try: canchas = canchas.filter(precio__lte=float(max_precio))
-            except ValueError: pass
 
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.pdf"'
+        styles = getSampleStyleSheet()
+        elements = []
+        styles = getSampleStyleSheet()
 
-        p = canvas.Canvas(response, pagesize=letter)
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(100, 750, "Reporte de Canchas - GoSport2")
+        # Título
+        elements.append(Paragraph("Informe de Auditoría de Canchas e Ingresos", styles['Title']))
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("A continuación se presenta un resumen de las canchas registradas en la plataforma, junto con su historial de reservas y un cálculo estimado del ingreso potencial en COP.", styles['Normal']))
+        elements.append(Spacer(1, 20))
+
+        # Tabla
+        data = [['ID', 'Cancha', 'Deporte', 'Dueño', 'Reservas', 'Ingreso Est (COP)']]
         
-        p.setFont("Helvetica", 12)
-        y = 710
-        for idx, c in enumerate(canchas):
+        total_ingresos = 0
+        
+        for c in canchas:
+            reservas_completadas = Reserva.objects.filter(cancha=c).count()
+            ingreso_est = float(c.precio) * reservas_completadas
+            total_ingresos += ingreso_est
+            
             deporte = c.deporte.nombre if c.deporte else 'N/A'
             dueño = c.dueño.email if c.dueño else 'N/A'
-            texto = f"{idx+1}. {c.nombre} | {deporte} | ${c.precio} | {dueño}"
-            p.drawString(100, y, texto)
-            y -= 20
-            if y < 50:  # Nueva página si se acaba el espacio
-                p.showPage()
-                p.setFont("Helvetica", 12)
-                y = 750
+            data.append([
+                str(c.id), 
+                c.nombre, 
+                deporte, 
+                dueño, 
+                str(reservas_completadas), 
+                f"${ingreso_est:,.2f}"
+            ])
 
-        p.showPage()
-        p.save()
+        data.append(['', '', '', '', 'TOTAL GENERAL:', f"${total_ingresos:,.2f}"])
 
+        t = Table(data, colWidths=[30, 150, 80, 120, 60, 100])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d1117')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#00ff88')),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#1f2937')),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.whitesmoke),
+            ('GRID', (0, 0), (-1, -2), 1, colors.HexColor('#374151')),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#00ff88')),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ]))
+        
+        import io
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        
+        elements.append(t)
+        doc.build(elements)
+
+        buffer.seek(0)
+        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="auditoria_canchas.pdf"'
+        
         return response
 
 import openpyxl
@@ -419,9 +451,6 @@ class ReporteCanchasExcelView(View):
         if q:
             canchas = canchas.filter(nombre__icontains=q)
 
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.xlsx"'
-
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Canchas"
@@ -436,8 +465,14 @@ class ReporteCanchasExcelView(View):
                 c.precio, c.ubicacion, c.ciudad,
                 c.dueño.email if c.dueño else 'N/A'
             ])
-            
-        wb.save(response)
+
+        import io
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.xlsx"'
         return response
 
 
@@ -453,9 +488,6 @@ class ReporteCanchasWordView(View):
             canchas = canchas.filter(deporte__id=deporte_id)
         if q:
             canchas = canchas.filter(nombre__icontains=q)
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.docx"'
 
         doc = Document()
         doc.add_heading('Reporte de Canchas - GoSport2', 0)
@@ -474,6 +506,12 @@ class ReporteCanchasWordView(View):
             row_cells[1].text = c.nombre
             row_cells[2].text = c.deporte.nombre if c.deporte else 'N/A'
             row_cells[3].text = c.dueño.email if c.dueño else 'N/A'
-            
-        doc.save(response)
+
+        import io
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="reporte_canchas.docx"'
         return response

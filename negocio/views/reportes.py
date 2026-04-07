@@ -166,10 +166,10 @@ class ReporteReservasPdfView(LoginRequiredMixin, View):
     def get(self, request):
         reservas = get_reservas_por_rol(request.user)
 
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.pdf"'
+        import io
+        buffer = io.BytesIO()
 
-        p = canvas.Canvas(response, pagesize=letter)
+        p = canvas.Canvas(buffer, pagesize=letter)
         p.setFont("Helvetica-Bold", 16)
         p.drawString(100, 750, f"Reporte de Reservas - GoSport2 ({request.user.rol})")
         
@@ -187,15 +187,16 @@ class ReporteReservasPdfView(LoginRequiredMixin, View):
         p.showPage()
         p.save()
 
+        buffer.seek(0)
+        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.pdf"'
+
         return response
 
 
 class ReporteReservasExcelView(LoginRequiredMixin, View):
     def get(self, request):
         reservas = get_reservas_por_rol(request.user)
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.xlsx"'
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -210,16 +211,19 @@ class ReporteReservasExcelView(LoginRequiredMixin, View):
                 r.fecha, r.hora, r.estado, monto_total, 'Sí' if r.pagado else 'No'
             ])
             
-        wb.save(response)
+        import io
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.xlsx"'
         return response
 
 
 class ReporteReservasWordView(LoginRequiredMixin, View):
     def get(self, request):
         reservas = get_reservas_por_rol(request.user)
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.docx"'
 
         doc = Document()
         doc.add_heading(f'Reporte de Reservas ({request.user.rol}) - GoSport2', 0)
@@ -241,5 +245,12 @@ class ReporteReservasWordView(LoginRequiredMixin, View):
             row_cells[3].text = f"{r.fecha} {r.hora.strftime('%H:%M')}"
             row_cells[4].text = str(r.estado)
             
-        doc.save(response)
+        import io
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="reporte_reservas.docx"'
+        
         return response
