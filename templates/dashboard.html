@@ -137,21 +137,41 @@
                 </table>
             </div>
             
-            <div class="bg-gradient-to-br from-gray-800 to-card border border-gray-700/50 rounded-xl p-8 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-8 opacity-10 text-neon group-hover:scale-110 group-hover:opacity-20 transition-all duration-500">
-                    <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2 relative z-10">Desarrollador (Django Admin)</h3>
-                <p class="text-gray-400 mb-6 relative z-10">Acceso profundo a los esquemas de bases de datos para superusuarios.</p>
-                <div class="relative z-10">
-                    <a href="{% url 'admin:index' %}" class="bg-gray-700/50 text-white border border-gray-600 hover:bg-white hover:text-black px-8 py-3 rounded-lg font-bold transition-colors">Otorgar Accesos SQL</a>
-                </div>
+            <h3 class="text-2xl font-bold text-neon mb-6 mt-10">Gestión de la Plataforma Web</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <a href="{% url 'admin_analytics' %}" class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-neon group transition">
+                    <h4 class="text-xl font-bold text-white group-hover:text-neon mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Global Analytics
+                    </h4>
+                    <p class="text-gray-400 text-sm">Monitorea los ingresos, reservas y tráfico general de este portal.</p>
+                </a>
+                <a href="{% url 'usuarios:admin_user_list' %}" class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 group transition">
+                    <h4 class="text-xl font-bold text-white group-hover:text-blue-400 mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Gestión de Usuarios
+                    </h4>
+                    <p class="text-gray-400 text-sm">Visualiza, restringe o actualiza la base de datos de usuarios.</p>
+                </a>
+                <a href="{% url 'canchas:admin_cancha_list' %}" class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-green-500 group transition">
+                    <h4 class="text-xl font-bold text-white group-hover:text-green-400 mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Gestión de Canchas
+                    </h4>
+                    <p class="text-gray-400 text-sm">Verifica, actualiza y controla las instalaciones ofertadas.</p>
+                </a>
+                <a href="{% url 'canchas:admin_deporte_list' %}" class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-yellow-500 group transition">
+                    <h4 class="text-xl font-bold text-white group-hover:text-yellow-400 mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                        Disciplinas (Deportes)
+                    </h4>
+                    <p class="text-gray-400 text-sm">Gestiona transversalmente los deportes en los que se categorizan las canchas y torneos.</p>
+                </a>
             </div>
         </section>
         <hr class="border-gray-800 my-10 border-dashed">
-    {% endif %}
 
-    {% if user.rol == 'DUEÑO' %}
+    {% elif user.rol == 'DUEÑO' %}
         <section>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <h3 class="text-xl font-semibold text-neon">Mis Canchas</h3>

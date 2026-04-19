@@ -141,3 +141,39 @@ class ReporteUsuariosView(UserPassesTestMixin, View):
             writer.writerow([u.id, u.email, u.nombre, u.apellido, getattr(u, 'rol', 'N/A'), u.date_joined.strftime("%Y-%m-%d")])
 
         return response
+
+from django.views.generic import ListView, DeleteView
+from django.urls import reverse_lazy
+from django.contrib import messages
+
+class AdminUserListView(UserPassesTestMixin, ListView):
+    model = CustomUser
+    template_name = 'usuarios/admin_user_list.html'
+    context_object_name = 'usuarios'
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminUserUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+    model = CustomUser
+    template_name = 'usuarios/admin_user_form.html'
+    fields = ['username', 'first_name', 'last_name', 'email', 'rol', 'is_active', 'is_superuser']
+    success_url = reverse_lazy('usuarios:admin_user_list')
+    success_message = "Usuario actualizado correctamente."
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminUserDeleteView(UserPassesTestMixin, DeleteView):
+    model = CustomUser
+    template_name = 'usuarios/admin_user_confirm_delete.html'
+    success_url = reverse_lazy('usuarios:admin_user_list')
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(self.request, "Usuario eliminado correctamente.")
+        return redirect(success_url)

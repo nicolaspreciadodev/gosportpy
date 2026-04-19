@@ -471,3 +471,82 @@ class ReporteCanchasWordView(View):
         except Exception as e:
             logger.error(f"Error generando Word de canchas: {e}")
             return HttpResponse(f"Error generando reporte: {e}", status=500)
+
+from django.views.generic import ListView, UpdateView, DeleteView, CreateView
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.messages.views import SuccessMessageMixin
+
+class AdminCanchaListView(UserPassesTestMixin, ListView):
+    model = Cancha
+    template_name = 'canchas/admin_cancha_list.html'
+    context_object_name = 'canchas'
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminCanchaUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+    model = Cancha
+    template_name = 'canchas/admin_cancha_form.html'
+    fields = ['nombre', 'descripcion', 'precio', 'ubicacion', 'ciudad', 'imagen', 'dueño', 'deporte']
+    success_url = reverse_lazy('canchas:admin_cancha_list')
+    success_message = "Cancha actualizada correctamente."
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminCanchaDeleteView(UserPassesTestMixin, DeleteView):
+    model = Cancha
+    template_name = 'canchas/admin_cancha_confirm_delete.html'
+    success_url = reverse_lazy('canchas:admin_cancha_list')
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(self.request, "Cancha eliminada correctamente.")
+        return redirect(success_url)
+
+class AdminDeporteListView(UserPassesTestMixin, ListView):
+    model = Deporte
+    template_name = 'canchas/admin_deporte_list.html'
+    context_object_name = 'deportes'
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminDeporteCreateView(UserPassesTestMixin, SuccessMessageMixin, CreateView):
+    model = Deporte
+    template_name = 'canchas/admin_deporte_form.html'
+    fields = ['nombre']
+    success_url = reverse_lazy('canchas:admin_deporte_list')
+    success_message = "Deporte creado correctamente."
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminDeporteUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+    model = Deporte
+    template_name = 'canchas/admin_deporte_form.html'
+    fields = ['nombre']
+    success_url = reverse_lazy('canchas:admin_deporte_list')
+    success_message = "Deporte actualizado correctamente."
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class AdminDeporteDeleteView(UserPassesTestMixin, DeleteView):
+    model = Deporte
+    template_name = 'canchas/admin_deporte_confirm_delete.html'
+    success_url = reverse_lazy('canchas:admin_deporte_list')
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(self.request, "Deporte eliminado correctamente.")
+        return redirect(success_url)

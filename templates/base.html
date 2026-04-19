@@ -45,14 +45,14 @@
                 Torneos
             </a>
 
-            {% if user.rol == 'DEPORTISTA' %}
+            {% if user.rol == 'DEPORTISTA' and not user.is_superuser %}
             <a href="{% url 'negocio:mis_equipos' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'mis_equipos' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
                 Mis Equipos
             </a>
             {% endif %}
 
-            {% if user.rol == 'DUEÑO' %}
+            {% if user.rol == 'DUEÑO' and not user.is_superuser %}
             <a href="{% url 'negocio:panel_reservas' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'panel_reservas' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
                 Reservas Activas
@@ -75,7 +75,13 @@
                 </div>
                 <div class="overflow-hidden">
                     <p class="text-sm font-semibold truncate">{{ user.first_name|default:user.username }}</p>
-                    <p class="text-xs text-gray-400 capitalize truncate">{{ user.get_rol_display }}</p>
+                    <p class="text-xs text-gray-400 capitalize truncate">
+                        {% if user.is_superuser %}
+                            Superadministrador
+                        {% else %}
+                            {{ user.get_rol_display }}
+                        {% endif %}
+                    </p>
                 </div>
             </div>
             <form action="{% url 'logout' %}" method="post" class="mt-4">
