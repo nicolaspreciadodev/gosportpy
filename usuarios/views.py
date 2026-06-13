@@ -138,7 +138,7 @@ class ReporteUsuariosView(UserPassesTestMixin, View):
         writer.writerow(['ID', 'Email', 'Nombre', 'Apellido', 'Rol', 'Fecha Registro'])
 
         for u in usuarios:
-            writer.writerow([u.id, u.email, u.nombre, u.apellido, getattr(u, 'rol', 'N/A'), u.date_joined.strftime("%Y-%m-%d")])
+            writer.writerow([u.id, u.email, u.first_name, u.last_name, getattr(u, 'rol', 'N/A'), u.date_joined.strftime("%Y-%m-%d")])
 
         return response
 

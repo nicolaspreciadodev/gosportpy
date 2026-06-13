@@ -142,6 +142,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # Seguridad y Sesiones (Fase 15)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 3600  # 1 hora
-SESSION_COOKIE_SECURE = False  # True requiere HTTPS en producción
+SESSION_COOKIE_SECURE = not DEBUG   # True en producción (Railway usa HTTPS)
+CSRF_COOKIE_SECURE = not DEBUG      # True en producción (Railway usa HTTPS)
 
 PASSWORD_RESET_TIMEOUT = 3600  # Link expira en 1 hora
