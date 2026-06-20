@@ -1,0 +1,130 @@
+/* =============================================
+   GOSPORT — Estilos Globales para Formularios
+   ============================================= */
+
+/* Inputs de texto, números, email, etc */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+    width: 100%;
+    background-color: #111111 !important;
+    border: 1px solid #374151 !important;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #ffffff !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9375rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Placeholders */
+input::placeholder,
+textarea::placeholder {
+    color: #9ca3af !important;
+    opacity: 1;
+}
+
+/* Focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #00ff88 !important;
+    box-shadow: 0 0 0 1px #00ff88 !important;
+}
+
+/* Select options */
+select option {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+select option:checked {
+    background: linear-gradient(#00ff88, #00ff88);
+    background-color: #00ff88 !important;
+    color: #000000 !important;
+}
+
+/* Textareas */
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Labels */
+label {
+    color: #e5e7eb !important;
+    font-weight: 500 !important;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem;
+}
+
+/* Error messages */
+.errorlist,
+ul.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+    color: #f87171;
+    font-size: 0.875rem;
+}
+
+.errorlist li,
+ul.errorlist li {
+    margin: 0.25rem 0;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+/* File input styling */
+input[type="file"] {
+    color: #ffffff;
+    padding: 0.5rem;
+}
+
+input[type="file"]::file-selector-button {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #00ff88;
+    color: #000000;
+    border-color: #00ff88;
+}
+
+/* Checkboxes y Radios */
+input[type="checkbox"],
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    accent-color: #00ff88;
+}
+
+/* Disabled inputs */
+input:disabled,
+textarea:disabled,
+select:disabled {
+    background-color: #0d0d0d !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
