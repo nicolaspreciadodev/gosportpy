@@ -107,9 +107,15 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'theme' / 'static']
+
+# Ensure collectstatic finds all static files from all apps
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -121,7 +127,8 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 
-# Storage backends: WhiteNoise para estáticos, Cloudinary para media
+# Storage backends: Cloudinary para media, Django StaticFilesStorage para estáticos
+# WhiteNoise middleware (en MIDDLEWARE) maneja la compresión en runtime
 if CLOUDINARY_STORAGE['CLOUD_NAME']:
     STORAGES = {
         "default": {
@@ -144,8 +151,19 @@ else:
     }
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Compatibilidad con django-cloudinary-storage (usa STATICFILES_STORAGE legacy)
+# Django's built-in StaticFilesStorage - NO CompressedStaticFilesStorage
+# WhiteNoise middleware comprime archivos on-the-fly en tiempo de ejecución
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# WhiteNoise configuration for runtime compression only
+WHITENOISE_COMPRESS_OFFLINE = False  # Desactiva pre-compresión offline en collectstatic
+WHITENOISE_COMPRESSION_QUALITY = 80   # Calidad de compresión JPEG en runtime
+
+# WhiteNoise serve files with gzip compression
+WHITENOISE_GZIP_RESPONSES = True      # Habilita compresión gzip en respuestas
+WHITENOISE_MIMETYPES = {
+    '.gz': 'application/gzip',
+}
 
 # Email Settings (Fase 12)
 if config('EMAIL_HOST_USER', default=''):
