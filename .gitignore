@@ -10,5 +10,4 @@ theme/static_src/node_modules/
 node_modules/
 
 # Media y Estáticos
-media/
-staticfiles/
+staticfiles/
