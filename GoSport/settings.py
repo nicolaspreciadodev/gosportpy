@@ -158,12 +158,12 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 # WhiteNoise configuration for runtime compression only
 WHITENOISE_COMPRESS_OFFLINE = False  # Desactiva pre-compresión offline en collectstatic
 WHITENOISE_COMPRESSION_QUALITY = 80   # Calidad de compresión JPEG en runtime
-
-# WhiteNoise serve files with gzip compression
 WHITENOISE_GZIP_RESPONSES = True      # Habilita compresión gzip en respuestas
 WHITENOISE_MIMETYPES = {
     '.gz': 'application/gzip',
 }
+WHITENOISE_AUTOREFRESH = True  # En desarrollo, refresca archivos automáticamente
+WHITENOISE_USE_FINDERS = True  # Usa los STATICFILES_FINDERS para encontrar archivos
 
 # Email Settings (Fase 12)
 if config('EMAIL_HOST_USER', default=''):
