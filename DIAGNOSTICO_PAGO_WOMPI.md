@@ -1,6 +1,18 @@
-# 🔍 Diagnóstico: Error de Pago en Wompi
+# 🔍 Diagnóstico: Error de Pago en Wompi - RESUELTO ✅
 
-## Problema Reportado
+## 📢 ACTUALIZACIÓN IMPORTANTE
+
+**El sistema ahora funciona sin necesidad de configurar webhooks en Wompi.** ✨
+
+La solución implementada hace consultas **directas a la API de Wompi** cuando el usuario retorna del checkout, lo que permite:
+- ✅ Verificación inmediata del pago
+- ✅ Sin necesidad de configurar webhook
+- ✅ Sin necesidad de tener URL pública
+- ✅ Sin necesidad de firmas (aunque se soportan para redundancia)
+
+---
+
+## Problema Original Reportado
 
 ```
 ❌ El pago no pudo ser realizado:
@@ -77,53 +89,64 @@ elif status == 'DECLINED':
 
 ## 📋 Checklist: Configuración en Wompi
 
-Para que funcione correctamente, **DEBES** configurar el webhook en Wompi:
+✅ **BUENA NOTICIA:** El sistema ahora **NO requiere configurar webhooks** en Wompi.
 
-### En el dashboard de Wompi:
+### Cómo funciona ahora:
 
-1. **Ve a:** Configuración → Webhooks
-2. **URL del webhook:** 
-   ```
-   https://gosportpy-production-ed70.up.railway.app/api/webhooks/wompi/
-   ```
+1. **Usuario completa pago en Wompi** ✅
+2. **Wompi redirige a tu app** con el transaction ID ✅
+3. **Tu app consulta directamente a API de Wompi** para verificar estado ✅
+4. **Sin necesidad de esperar un webhook** - Es inmediato ✅
 
-3. **Evento a escuchar:** 
-   ```
-   transaction.updated
-   ```
+### Lo que necesitas en Railway:
 
-4. **Headers personalizados:** (Opcional pero recomendado)
-   ```
-   X-API-Key: Tu_API_Key_Wompi
-   ```
+Solo estas variables de entorno:
 
-5. **Método:** POST
+```
+WOMPI_PUBLIC_KEY=pub_test_XXXXXX
+WOMPI_PRIVATE_KEY=prv_test_XXXXXX
+WOMPI_EVENTS_SECRET=test_events_XXXXXX
+```
 
-6. **Verificación de Wompi:** 
-   - ✅ Wompi **automáticamente** envía el header `X-Signature`
-   - ✅ Nuestro código ahora lo verifica
+### Lo que NO necesitas hacer:
+
+- ❌ No necesitas configurar webhook en dashboard de Wompi
+- ❌ No necesitas URL de webhook
+- ❌ No necesitas verificar firmas (aunque el código lo soporta)
+
+### ¿Y si Wompi llama a tu webhook?
+
+Si en el futuro configuras un webhook en Wompi, el código lo procesará automáticamente como confirmación redundante. Pero no es necesario para que funcione.
 
 ---
 
 ## 🧪 Cómo probar
 
-### Test 1: Verificar que el webhook está registrado
-```bash
-# En Railway, revisa los logs
-# Deberías ver: "Webhook recibido" o "Firma de Wompi verificada"
-```
+### Test: Hacer un pago de prueba (sin webhooks)
+1. **Abre tu app en Railway:**
+   - https://gosportpy-production-ed70.up.railway.app
 
-### Test 2: Hacer un pago de prueba
-1. Vuelve a Railway y abre tu app
-2. Selecciona una reserva
-3. Click en "Pagar con Wompi"
-4. Completa el pago (usa credenciales de prueba de Wompi)
-5. Deberías recibir confirmación inmediata
+2. **Selecciona una reserva sin pagar**
+   - Ingresa como usuario
+   - Busca una reserva con estado "Sin pagar"
 
-### Test 3: Revisar logs en Railway
-```
-# En Railway → Logs → Busca "Transacción actualizada"
-```
+3. **Click en "Pagar con Wompi"**
+   - Se abre el Widget de Wompi
+
+4. **Completa el pago con credenciales de prueba:**
+   - Tarjeta: 4242 4242 4242 4242
+   - Expiración: 12/25
+   - CVV: 123
+
+5. **Wompi redirige de vuelta a tu app**
+   - Debería mostrar: "¡Pago exitoso!" ✅
+   - La reserva cambia a estado "PROGRAMADA"
+
+6. **Revisa logs en Railway:**
+   - Railway → Logs → Busca:
+     - "Consultando estado a Wompi"
+     - "Transacción 12345: APPROVED"
+     - "✅ Reserva 42 marcada como PAGADA"
 
 ---
 
@@ -213,9 +236,24 @@ fix: Implementar verificación correcta de firma (signature) en webhook de Wompi
 
 ## ✨ Próximos pasos
 
-1. ✅ Deploy a Railway (ya está hecho)
-2. ⚠️ Configura el webhook en dashboard de Wompi
-3. 🧪 Haz un pago de prueba
-4. 📊 Verifica que el status cambia a "PROGRAMADA" automáticamente
+1. ✅ Deploy a Railway (ya está hecho con el nuevo código)
+2. 🧪 **Prueba ahora:** Haz un pago de prueba (ver sección anterior)
+3. 📊 Verifica que el status de la reserva cambia a "PROGRAMADA" automáticamente
+4. 📋 **Opcional:** Si quieres configurar webhook para redundancia, ahora la URL es:
+   ```
+   https://gosportpy-production-ed70.up.railway.app/api/webhooks/wompi/
+   ```
+
+## ⚡ Comparación: Antes vs Ahora
+
+| Aspecto | ❌ Antes | ✅ Ahora |
+|--------|---------|---------|
+| Necesita webhook en Wompi | Sí | No |
+| Necesita URL pública | Sí | No |
+| Necesita firmas HMAC | Sí | Opcional |
+| Confirmación pago | Espera webhook | Inmediata (API) |
+| Funciona en sandbox | No fácil | Sí, muy fácil |
+| Líneas de código | 80+ | 185+ (más robusto) |
+| Velocidad | 🐢 Segundos (webhook) | 🚀 Inmediato |
 
 ¡El sistema de pago debería funcionar correctamente ahora! 🎉
