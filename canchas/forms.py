@@ -54,3 +54,12 @@ class DisponibilidadForm(forms.ModelForm):
             }),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        hora_inicio = cleaned_data.get('hora_inicio')
+        hora_fin = cleaned_data.get('hora_fin')
+
+        if hora_inicio and hora_fin:
+            if hora_fin <= hora_inicio:
+                raise forms.ValidationError('La hora de fin debe ser posterior a la hora de inicio.')
+        return cleaned_data

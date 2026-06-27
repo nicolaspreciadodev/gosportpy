@@ -1,0 +1,23 @@
+# GoSport AI Rules
+
+Este proyecto está desarrollado en Django.
+
+Siempre:
+
+- Mantener la arquitectura existente.
+- No refactorizar código que funciona.
+- Modificar únicamente lo necesario.
+- Explicar antes de realizar cambios grandes.
+- Reutilizar funciones existentes.
+- No crear archivos duplicados.
+- Mantener el estilo actual del proyecto.
+- No cambiar nombres de modelos ni tablas.
+- No romper compatibilidad.
+- Revisar imports antes de crear nuevos.
+
+Antes de responder:
+
+1. Buscar si la funcionalidad ya existe.
+2. Explicar el flujo.
+3. Proponer cambios mínimos.
+4. Esperar confirmación para cambios grandes.
