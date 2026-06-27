@@ -99,10 +99,13 @@ class TorneoDetalleView(LoginRequiredMixin, View):
         for partido in partidos:
             jornadas.setdefault(partido.jornada, []).append(partido)
 
+        # Ordenamos las jornadas numéricamente
+        jornadas_ordenadas = sorted(jornadas.items(), key=lambda x: x[0])
+
         return render(request, 'negocio/torneo_detalle.html', {
             'torneo': torneo,
             'posiciones': posiciones,
-            'jornadas': sorted(jornadas.items())
+            'jornadas': jornadas_ordenadas
         })
 
 
