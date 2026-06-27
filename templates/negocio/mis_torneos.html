@@ -26,7 +26,7 @@
                 {% for torneo in torneos %}
                 <tr class="hover:bg-gray-800/30 transition">
                     <td class="px-6 py-4 font-bold">{{ torneo.nombre }}</td>
-                    <td class="px-6 py-4">{{ torneo.deporte.nombre }}</td>
+                    <td class="px-6 py-4">{{ torneo.deporte.nombre|default:"N/A" }}</td>
                     <td class="px-6 py-4">{{ torneo.fecha_inicio }} al {{ torneo.fecha_fin }}</td>
                     <td class="px-6 py-4">
                         {% if torneo.estado == 'PUBLICADO' %}

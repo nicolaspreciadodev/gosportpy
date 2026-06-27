@@ -80,7 +80,7 @@
             {% else %}
                 <div class="flex flex-col gap-6">
                     <!-- Individual Registration (if Tenis) -->
-                    {% if torneo.deporte.nombre.lower() == 'tenis' %}
+                    {% if torneo.deporte and torneo.deporte.nombre.lower() == 'tenis' %}
                     <form action="{% url 'negocio:inscribir_torneo' torneo.id %}" method="post">
                         {% csrf_token %}
                         <button type="submit" class="group relative overflow-hidden bg-yellow-500 text-dark font-black px-8 py-4 rounded-2xl hover:bg-yellow-400 transition-all duration-300 shadow-[0_10px_20px_rgba(234,179,8,0.2)] hover:scale-105">
