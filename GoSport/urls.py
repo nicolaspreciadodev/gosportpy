@@ -16,19 +16,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from core.views import DashboardView
+from core.views import DashboardView, AdminAnalyticsView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("__reload__/", include("django_browser_reload.urls")),
     path('accounts/', include('django.contrib.auth.urls')),
     path('negocio/', include('negocio.urls')),
     path('', DashboardView.as_view(), name='dashboard'),
+    path('global-analytics/', AdminAnalyticsView.as_view(), name='admin_analytics'),
     path('canchas/', include('canchas.urls')),
     path('usuarios/', include('usuarios.urls')),
 ]
 
+# django_browser_reload solo en desarrollo
+if settings.DEBUG:
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
+
+# Servir media files en desarrollo local (en producción Cloudinary los sirve)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

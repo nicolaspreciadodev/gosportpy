@@ -1,5 +1,8 @@
 import json
 import hashlib
+import hmac
+import logging
+import requests
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -10,8 +13,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from negocio.models import Reserva, Factura
 from django.contrib import messages
 
+logger = logging.getLogger(__name__)
+
 class IniciarPagoWompiView(LoginRequiredMixin, View):
-    """Renderiza el Widget del Checkout de Wompi."""
+    """Renderiza el Widget del Checkout de Wompi.
+    Para propósitos del proyecto académico, simula el pago exitoso.
+    """
     def get(self, request, reserva_id):
         reserva = get_object_or_404(Reserva, id=reserva_id, usuario=request.user)
         
@@ -25,14 +32,15 @@ class IniciarPagoWompiView(LoginRequiredMixin, View):
             
         # Simulación académica: Marcamos como pagado inmediatamente
         reserva.pagado = True
+        reserva.estado = 'PROGRAMADA'
         reserva.save()
         
         # Enviar notificación simulada
         try:
             from core.emails import enviar_confirmacion_reserva
             enviar_confirmacion_reserva(reserva)
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error enviando confirmación: {e}")
 
         messages.success(request, "¡Pago con Wompi simulado exitosamente!")
         return render(request, 'negocio/pagos/pago_exitoso.html', {
@@ -41,53 +49,12 @@ class IniciarPagoWompiView(LoginRequiredMixin, View):
         })
 
 class RespuestaPagoWompiView(LoginRequiredMixin, View):
-    """Vista de retorno del usuario despues del Checkout."""
+    """Vista de retorno del usuario después del Checkout."""
     def get(self, request):
-        transaction_id = request.GET.get('id')
-        
-        # Buscaremos la factura y reserva por si no hay status en la url
-        factura = Factura.objects.filter(wompi_transaction_id=transaction_id).first()
-        reserva = factura.reserva if factura else None
-        
-        messages.info(request, "Verificando el estado de tu transacción. Si fue exitosa se reflejará en tus reservas pronto.")
-        
-        return render(request, 'negocio/pagos/pago_respuesta.html', {
-            'transaction_id': transaction_id,
-            'reserva': reserva
-        })
+        return redirect('dashboard')
 
 @method_decorator(csrf_exempt, name='dispatch')
 class WebhookWompiView(View):
-    """Webhook para recibir notificaciones asincronas de Wompi."""
+    """Webhook para recibir notificaciones asíncronas de Wompi."""
     def post(self, request, *args, **kwargs):
-        try:
-            payload = json.loads(request.body)
-            event = payload.get('event')
-            data = payload.get('data', {}).get('transaction', {})
-            
-            # Verificación de firma (signature) omitida aquí por simplicidad,
-            # pero idealmente se concatena properties y se hace sha256 con
-            # setting.WOMPI_EVENTS_SECRET.
-            
-            if event == 'transaction.updated':
-                ref = data.get('reference')
-                status = data.get('status')
-                transaction_id = data.get('id')
-                
-                if status == 'APPROVED':
-                    try:
-                        factura = Factura.objects.get(referencia_pago=ref)
-                        reserva = factura.reserva
-                        if not reserva.pagado:
-                            reserva.pagado = True
-                            reserva.estado = 'PROGRAMADA'
-                            reserva.save()
-                            
-                            factura.wompi_transaction_id = transaction_id
-                            factura.save()
-                    except Factura.DoesNotExist:
-                        pass
-                        
-            return JsonResponse({'status': 'ok'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+        return JsonResponse({'status': 'ok'})

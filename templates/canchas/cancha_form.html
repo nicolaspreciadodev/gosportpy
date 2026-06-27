@@ -59,21 +59,54 @@
 
 <style>
 /* Estilos base para los inputs generados por Django */
-#id_nombre, #id_descripcion, #id_precio, #id_ubicacion, #id_deporte {
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="date"],
+textarea,
+select {
     width: 100%;
-    background: #111111;
-    border: 1px solid #374151;
+    background: #111111 !important;
+    border: 1px solid #374151 !important;
     border-radius: 0.75rem;
     padding: 0.75rem 1rem;
-    color: white;
+    color: #ffffff !important;
     outline: none;
     transition: border-color 0.3s;
+    font-family: inherit;
 }
-#id_nombre:focus, #id_descripcion:focus, #id_precio:focus,
-#id_ubicacion:focus, #id_deporte:focus {
-    border-color: #00ff88;
-    box-shadow: 0 0 0 1px #00ff88;
+
+/* Específicos para campos de Django */
+#id_nombre, #id_descripcion, #id_precio, #id_ubicacion, #id_deporte, #id_ciudad {
+    color: #ffffff !important;
 }
-#id_deporte { background: #111111; }
+
+input[type="text"]::placeholder,
+textarea::placeholder {
+    color: #9ca3af;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus,
+#id_nombre:focus,
+#id_descripcion:focus,
+#id_precio:focus,
+#id_ubicacion:focus,
+#id_deporte:focus,
+#id_ciudad:focus {
+    border-color: #00ff88 !important;
+    box-shadow: 0 0 0 1px #00ff88 !important;
+}
+
+select option {
+    background: #1f1f1f;
+    color: #ffffff;
+}
 </style>
 {% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Deportes{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <header class="flex justify-between items-center border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Configuración de Deportes</h2>
+            <p class="text-gray-400">Administra las disciplinas disponibles en la plataforma</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'dashboard' %}" class="bg-gray-800 text-gray-300 font-bold px-4 py-2 rounded hover:bg-gray-700 transition">Volver</a>
+            <a href="{% url 'canchas:admin_deporte_create' %}" class="bg-neon text-dark font-bold px-4 py-2 rounded hover:bg-green-400 transition">+ Nuevo Deporte</a>
+        </div>
+    </header>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-gray-800 text-gray-400 text-sm">
+                <tr>
+                    <th class="p-4 w-16">ID</th>
+                    <th class="p-4">Nombre de la Disciplina</th>
+                    <th class="p-4 text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800 text-white">
+                {% for d in deportes %}
+                <tr class="hover:bg-gray-800/50 transition">
+                    <td class="p-4 text-gray-500 font-mono">#{{ d.id }}</td>
+                    <td class="p-4 font-bold">{{ d.nombre }}</td>
+                    <td class="p-4 text-right flex justify-end gap-2">
+                        <a href="{% url 'canchas:admin_deporte_update' d.pk %}" class="px-3 py-1 bg-gray-800 text-gray-300 rounded text-xs hover:bg-white hover:text-black transition">Editar</a>
+                        <a href="{% url 'canchas:admin_deporte_delete' d.pk %}" class="px-3 py-1 bg-red-500/10 text-red-500 rounded text-xs border border-red-500/20 hover:bg-red-500 hover:text-white transition">Eliminar</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="p-8 text-center text-gray-500">No hay deportes registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}GoSport | Global Analytics{% endblock %}
+{% block content %}
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="max-w-7xl mx-auto space-y-8">
+    <header class="flex items-end justify-between border-b border-gray-800 pb-4">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Analytics Globales <span class="text-neon ml-2">🌐</span></h2>
+            <p class="text-gray-400 mt-1">Supervisión general de la plataforma (Reservas e Ingresos globales)</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="bg-gray-800 text-gray-300 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-700 transition">
+                Volver al Panel
+            </a>
+        </div>
+    </header>
+
+    <!-- Cards (Hero Metrics) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-gradient-to-br from-green-900/40 to-black border border-neon/30 rounded-2xl p-6 shadow-[0_0_20px_rgba(0,255,136,0.05)]">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Ingresos Consolidados</h3>
+            <div class="text-4xl font-black text-white">${{ ingresos_totales|floatformat:"2" }}</div>
+            <p class="text-neon text-xs mt-2 font-medium">Todas las transacciones en línea completadas</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Ingresos Globales del Mes</h3>
+            <div class="text-4xl font-black text-white">${{ ingresos_mes|floatformat:"2" }}</div>
+            <p class="text-gray-500 text-xs mt-2">Mes actual corriente</p>
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-2xl p-6">
+            <h3 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Nuevas Reservas (30d)</h3>
+            <div class="text-4xl font-black text-white">{{ total_reservas_30_dias }}</div>
+            <p class="text-blue-400 text-xs mt-2 font-medium">Reservas programadas y cruzadas</p>
+        </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        <!-- Bar Chart Panel -->
+        <div class="xl:col-span-3 bg-gray-900/60 border border-gray-800 rounded-2xl p-6 relative">
+            <h3 class="text-white text-lg font-bold mb-4 flex items-center gap-2">Tráfico de Reservas Diarias <span class="text-sm font-normal text-gray-400">| Toda la plataforma</span></h3>
+            <div class="h-80 relative">
+                <canvas id="resolucionBarChart"></canvas>
+            </div>
+            {% if total_reservas_30_dias == 0 %}
+            <div class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm rounded-2xl z-20">
+                <p class="text-gray-400 font-medium">No hay reservas recientes para generar gráficos</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Doughnut Chart: Tipos de Usuarios -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 relative flex flex-col items-center">
+            <h3 class="text-white text-lg font-bold mb-4 w-full text-left">Distribución de Usuarios</h3>
+            <div class="h-64 w-full relative">
+                <canvas id="usuariosDoughnutChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Doughnut Chart: Canchas Exitosas -->
+        <div class="xl:col-span-2 bg-gray-900/60 border border-gray-800 rounded-2xl p-6 relative flex flex-col items-center">
+            <h3 class="text-white text-lg font-bold mb-4 w-full text-left">Canchas con mayor Actividad</h3>
+            <div class="h-64 w-full relative">
+                <canvas id="canchasDoughnutChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.font.family = "'Inter', 'sans-serif'";
+
+    // --- BAR CHART --- //
+    const rawDiasLabels = '{{ dias_labels_json|safe }}';
+    const rawDiasData = '{{ dias_data_json|safe }}';
+
+    if (rawDiasLabels && rawDiasLabels !== '[]' && rawDiasLabels !== 'null') {
+        const diasLabels = JSON.parse(rawDiasLabels || '[]');
+        const diasData = JSON.parse(rawDiasData || '[]');
+
+        if (diasLabels.length > 0) {
+            const ctxBar = document.getElementById('resolucionBarChart').getContext('2d');
+            const barGradient = ctxBar.createLinearGradient(0, 0, 0, 400);
+            barGradient.addColorStop(0, 'rgba(0, 255, 136, 0.8)');   
+            barGradient.addColorStop(1, 'rgba(0, 255, 136, 0.1)');
+
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: diasLabels,
+                    datasets: [{
+                        label: 'Total Reservas',
+                        data: diasData,
+                        backgroundColor: barGradient,
+                        borderColor: 'rgba(0, 255, 136, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#00ff88',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#6b7280' }, grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false } },
+                        x: { ticks: { color: '#6b7280', maxRotation: 45, minRotation: 45 }, grid: { display: false, drawBorder: false } }
+                    }
+                }
+            });
+        }
+    }
+
+    // --- CHART USUARIOS --- //
+    const rawRolesLabels = '{{ roles_labels_json|safe }}';
+    const rawRolesData = '{{ roles_counts_json|safe }}';
+    
+    if (rawRolesLabels && rawRolesLabels !== '[]' && rawRolesLabels !== 'null') {
+        const rolesLabels = JSON.parse(rawRolesLabels || '[]');
+        const rolesData = JSON.parse(rawRolesData || '[]');
+
+        const ctxUsuarios = document.getElementById('usuariosDoughnutChart').getContext('2d');
+        new Chart(ctxUsuarios, {
+            type: 'pie',
+            data: {
+                labels: rolesLabels,
+                datasets: [{
+                    data: rolesData,
+                    backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(168, 85, 247, 0.8)', 'rgba(0, 255, 136, 0.8)', 'rgba(234, 179, 8, 0.8)'],
+                    borderColor: 'rgb(15, 23, 42)',
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    // --- CHART CANCHAS --- //
+    const rawCanchasLabels = '{{ canchas_labels_json|safe }}';
+    const rawCanchasData = '{{ canchas_data_json|safe }}';
+    if (rawCanchasLabels && rawCanchasLabels !== '[]' && rawCanchasLabels !== 'null') {
+        const canchasLabels = JSON.parse(rawCanchasLabels || '[]');
+        const canchasData = JSON.parse(rawCanchasData || '[]');
+
+        if (canchasLabels.length > 0) {
+            const ctxDoughnut = document.getElementById('canchasDoughnutChart').getContext('2d');
+            new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: canchasLabels,
+                    datasets: [{
+                        data: canchasData,
+                        backgroundColor: [
+                            'rgba(0, 255, 136, 0.8)', 'rgba(59, 130, 246, 0.8)', 
+                            'rgba(168, 85, 247, 0.8)', 'rgba(234, 179, 8, 0.8)', 'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: 'rgb(15, 23, 42)',
+                        borderWidth: 3, hoverOffset: 8
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
