@@ -43,3 +43,22 @@ class MisEquiposView(RoleRequiredMixin, View):
     def get(self, request):
         equipos = request.user.equipos.all()
         return render(request, 'negocio/mis_equipos.html', {'equipos': equipos})
+
+class EquipoDetailView(RoleRequiredMixin, View):
+    """Muestra los detalles de un equipo."""
+    allowed_roles = ['DEPORTISTA', 'DUEÑO']
+
+    def get(self, request, pk):
+        equipo = get_object_or_404(Equipo, id=pk)
+        
+        # Opcional: restringir para que solo lo vean los jugadores del equipo o administradores
+        if request.user not in equipo.jugadores.all() and not request.user.is_staff:
+            messages.error(request, 'No tienes permiso para ver este equipo.')
+            return redirect('negocio:mis_equipos')
+            
+        torneos = equipo.torneos.all()
+        return render(request, 'negocio/equipo_detalle.html', {
+            'equipo': equipo,
+            'torneos': torneos,
+        })
+

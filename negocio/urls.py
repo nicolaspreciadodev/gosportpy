@@ -15,6 +15,7 @@ urlpatterns = [
     path('torneos/solicitar/', views.SolicitarTorneoView.as_view(), name='solicitar_torneo'),
     path('equipos/crear/', views.EquipoCreateView.as_view(), name='crear_equipo'),
     path('equipos/mis-equipos/', views.MisEquiposView.as_view(), name='mis_equipos'),
+    path('equipos/<int:pk>/', views.EquipoDetailView.as_view(), name='equipo_detalle'),
     path('reservar/<int:reserva_id>/pagar', views.IniciarPagoWompiView.as_view(), name='iniciar_pago'),
     path('pagos/respuesta/', views.RespuestaPagoWompiView.as_view(), name='pago_respuesta'),
     path('api/webhooks/wompi/', views.WebhookWompiView.as_view(), name='wompi_webhook'),

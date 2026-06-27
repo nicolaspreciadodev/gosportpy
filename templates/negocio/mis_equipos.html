@@ -21,6 +21,11 @@
                     <li>• {{ j.first_name }} {{ j.last_name }} ({{ j.username }})</li>
                 {% endfor %}
             </ul>
+            <div class="mt-4 pt-4 border-t border-gray-800 flex justify-end">
+                <a href="{% url 'negocio:equipo_detalle' equipo.id %}" class="text-neon hover:text-green-300 font-semibold text-sm flex items-center gap-1 transition">
+                    Ver Detalles →
+                </a>
+            </div>
         </div>
         {% empty %}
         <div class="col-span-full text-center border border-dashed border-gray-800 rounded-2xl p-12 text-gray-500">

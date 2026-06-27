@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<div class="max-w-4xl mx-auto px-4 space-y-8">
+    <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8 shadow-xl">
+        <div class="flex items-center gap-6 border-b border-gray-800 pb-6 mb-6">
+            {% if equipo.logo %}
+                <img src="{{ equipo.logo.url }}" alt="Logo de {{ equipo.nombre }}" class="w-24 h-24 rounded-full object-cover border-2 border-neon">
+            {% else %}
+                <div class="w-24 h-24 rounded-full bg-gray-800 border-2 border-neon flex items-center justify-center text-neon">
+                    <i data-lucide="shield" class="w-10 h-10"></i>
+                </div>
+            {% endif %}
+            
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">{{ equipo.nombre }}</h1>
+                <p class="text-gray-400">Miembro desde {{ equipo.jugadores.first.date_joined|date:"M Y"|default:"el inicio" }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Integrantes -->
+            <div>
+                <h3 class="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                    <i data-lucide="users" class="w-5 h-5 text-neon"></i>
+                    Integrantes ({{ equipo.jugadores.count }})
+                </h3>
+                <ul class="space-y-3">
+                    {% for jugador in equipo.jugadores.all %}
+                    <li class="flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+                        <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-bold">
+                            {{ jugador.first_name|first|upper }}{{ jugador.last_name|first|upper }}
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">{{ jugador.first_name }} {{ jugador.last_name }}</p>
+                            <p class="text-xs text-gray-400">@{{ jugador.username }}</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Torneos -->
+            <div>
+                <h3 class="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                    <i data-lucide="trophy" class="w-5 h-5 text-neon"></i>
+                    Torneos Inscritos
+                </h3>
+                {% if torneos %}
+                    <ul class="space-y-3">
+                        {% for torneo in torneos %}
+                        <li class="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 hover:border-neon transition group">
+                            <a href="{% url 'negocio:torneo_detalle' torneo.id %}" class="block">
+                                <p class="text-white font-bold group-hover:text-neon transition">{{ torneo.nombre }}</p>
+                                <p class="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i>
+                                    {{ torneo.fecha_inicio|date:"d M Y" }}
+                                </p>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8 border border-dashed border-gray-800 rounded-lg text-gray-500">
+                        Este equipo no ha participado en ningún torneo.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+            <a href="{% url 'negocio:mis_equipos' %}" class="inline-flex items-center gap-2 text-gray-400 hover:text-white transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Volver a Mis Equipos
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
