@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10">
+    <div class="bg-card border border-gray-800 rounded-2xl overflow-hidden p-8 shadow-xl relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-transparent"></div>
+        
+        <h2 class="text-3xl font-bold text-white mb-6">Promocionar Torneo: <span class="text-yellow-500">{{ torneo.nombre }}</span></h2>
+        
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-300">Cancha donde se mostrará la promoción</label>
+                <select name="cancha_id" required class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition">
+                    {% for cancha in canchas %}
+                        <option value="{{ cancha.id }}">{{ cancha.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-300">Texto Promocional (Slogan/Descripción)</label>
+                <textarea name="texto_promocional" rows="4" required class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition" placeholder="¡No te pierdas el gran torneo! Inscripciones abiertas..."></textarea>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-300">Imagen Publicitaria (Opcional)</label>
+                <input type="file" name="imagen_promocional" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500/10 file:text-yellow-500 hover:file:bg-yellow-500/20 transition">
+            </div>
+
+            <div class="flex gap-4 pt-6 border-t border-gray-800">
+                <a href="{% url 'negocio:mis_torneos' %}" class="flex-1 text-center py-3 px-4 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition">Cancelar</a>
+                <button type="submit" class="flex-1 bg-yellow-500 text-black font-bold py-3 px-4 rounded-xl hover:bg-yellow-400 transition">Enviar Solicitud</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

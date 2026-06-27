@@ -41,7 +41,16 @@ class DisponibilidadForm(forms.ModelForm):
         model = Disponibilidad
         fields = ['dia_semana', 'hora_inicio', 'hora_fin']
         widgets = {
-            'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'hora_fin': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
+            'dia_semana': forms.Select(attrs={
+                'class': 'w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon transition'
+            }),
+            'hora_inicio': forms.TimeInput(format='%H:%M', attrs={
+                'type': 'time', 
+                'class': 'w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon transition [color-scheme:dark]'
+            }),
+            'hora_fin': forms.TimeInput(format='%H:%M', attrs={
+                'type': 'time', 
+                'class': 'w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon transition [color-scheme:dark]'
+            }),
         }
 

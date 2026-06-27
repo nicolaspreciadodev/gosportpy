@@ -19,9 +19,10 @@ class CrearReservaView(RoleRequiredMixin, View):
         cancha = get_object_or_404(Cancha, id=cancha_id)
         fecha = request.POST.get('fecha')
         hora = request.POST.get('hora')
+        hora_fin = request.POST.get('hora_fin')
 
-        if not fecha or not hora:
-            messages.error(request, 'Debe proporcionar una fecha y hora.')
+        if not fecha or not hora or not hora_fin:
+            messages.error(request, 'Debe proporcionar fecha, hora de inicio y hora de fin.')
             return render(request, 'crear_reserva.html', {'cancha': cancha})
 
         from datetime import datetime
@@ -42,7 +43,7 @@ class CrearReservaView(RoleRequiredMixin, View):
             messages.error(request, 'El horario seleccionado no está disponible o es inválido.')
             return render(request, 'crear_reserva.html', {'cancha': cancha})
 
-        reserva = Reserva(usuario=request.user, cancha=cancha, fecha=fecha, hora=hora)
+        reserva = Reserva(usuario=request.user, cancha=cancha, fecha=fecha, hora=hora, hora_fin=hora_fin)
 
         try:
             reserva.full_clean()

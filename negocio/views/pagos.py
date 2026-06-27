@@ -17,23 +17,28 @@ class IniciarPagoWompiView(LoginRequiredMixin, View):
         
         if reserva.pagado:
             messages.info(request, "Esta reserva ya se encuentra pagada.")
-            return redirect('panel_reservas')
+            return redirect('dashboard')
             
         factura = reserva.factura
         if not factura.referencia_pago:
             factura.save()
             
-        monto_centavos = int(factura.total * 100)
+        # Simulación académica: Marcamos como pagado inmediatamente
+        reserva.pagado = True
+        reserva.save()
         
-        # Validar configuración enviando varibles
-        context = {
+        # Enviar notificación simulada
+        try:
+            from core.emails import enviar_confirmacion_reserva
+            enviar_confirmacion_reserva(reserva)
+        except:
+            pass
+
+        messages.success(request, "¡Pago con Wompi simulado exitosamente!")
+        return render(request, 'negocio/pagos/pago_exitoso.html', {
             'reserva': reserva,
-            'factura': factura,
-            'monto_centavos': monto_centavos,
-            'public_key': getattr(settings, 'WOMPI_PUBLIC_KEY', 'pub_test_XXXXX')
-        }
-        
-        return render(request, 'negocio/pagos/wompi_checkout.html', context)
+            'factura': factura
+        })
 
 class RespuestaPagoWompiView(LoginRequiredMixin, View):
     """Vista de retorno del usuario despues del Checkout."""

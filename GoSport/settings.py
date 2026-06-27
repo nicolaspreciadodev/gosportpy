@@ -120,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 
@@ -162,7 +162,7 @@ WOMPI_PRIVATE_KEY = config('WOMPI_PRIVATE_KEY', default='prv_test_XXXXX')
 WOMPI_EVENTS_SECRET = config('WOMPI_EVENTS_SECRET', default='test_events_XXXXX')
 
 TAILWIND_APP_NAME = 'theme'
-NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
+NPM_BIN_PATH = config('NPM_BIN_PATH', default='npm')
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
@@ -177,21 +177,13 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # =============================================
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 3600  # 1 hora de duración máxima
-SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.0.1,http://localhost', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 
 # =============================================
 # EMAIL — Configuración
 # =============================================
-
-# DESARROLLO: imprime el email en la consola
-# Cuando tengas SMTP real, reemplaza por:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'tu@gmail.com'         ← tu correo
-# EMAIL_HOST_PASSWORD = 'tu_app_password'  ← contraseña de app Gmail
-# DEFAULT_FROM_EMAIL = 'GoSport <tu@gmail.com>'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'GoSport <noreply@gosport.com>'

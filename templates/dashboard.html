@@ -136,6 +136,42 @@
                     </tbody>
                 </table>
             </div>
+
+            <h3 class="text-2xl font-bold text-blue-400 mb-6 mt-10">Aprobación de Publicidad en Canchas</h3>
+            <div class="bg-card border border-gray-800 rounded-xl overflow-hidden mb-12">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-800">
+                        <tr>
+                            <th class="p-5 font-semibold">Cancha</th>
+                            <th class="p-5 font-semibold">Evento a Publicitar</th>
+                            <th class="p-5 font-semibold">Texto</th>
+                            <th class="p-5 font-semibold text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        {% for promo in promociones_pendientes %}
+                        <tr class="hover:bg-gray-800/30 transition-colors">
+                            <td class="p-5 font-bold text-white">{{ promo.cancha.nombre }}</td>
+                            <td class="p-5 text-gray-300">{{ promo.torneo.nombre }}</td>
+                            <td class="p-5 text-gray-400 text-sm italic">{{ promo.texto_promocional|truncatechars:100 }}</td>
+                            <td class="p-5 text-right flex justify-end gap-2">
+                                <form action="{% url 'negocio:gestionar_promocion' promo.id %}" method="post" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="aprobar" class="bg-blue-500/20 text-blue-400 font-semibold border border-blue-500/30 px-3 py-1.5 rounded transition shadow-sm text-sm hover:bg-blue-500 hover:text-white">Aprobar</button>
+                                    <button type="submit" name="action" value="rechazar" class="bg-red-500/10 text-red-500 font-semibold border border-red-500/30 px-3 py-1.5 rounded transition ml-2 shadow-sm text-sm hover:bg-red-500 hover:text-white">Rechazar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-12 text-center text-gray-500 border-b border-gray-800 bg-gray-900/10">
+                                <p class="text-sm font-bold text-gray-400 italic">No hay solicitudes de publicidad de torneos por ahora.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             
             <div class="bg-gradient-to-br from-gray-800 to-card border border-gray-700/50 rounded-xl p-8 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 p-8 opacity-10 text-neon group-hover:scale-110 group-hover:opacity-20 transition-all duration-500">
@@ -233,6 +269,7 @@
                         <div class="flex gap-2">
                             <a href="{% url 'negocio:torneo_detalle' torneo.id %}" class="px-3 py-1 bg-gray-800 text-gray-300 text-xs rounded border border-gray-700 hover:bg-white hover:text-black transition font-semibold">Ver Detalles</a>
                             {% if torneo.is_approved %}
+                            <a href="{% url 'negocio:solicitar_promocion' torneo.id %}" class="px-3 py-1 bg-blue-900/40 text-blue-400 text-xs rounded border border-blue-500/50 hover:bg-blue-500 hover:text-black transition font-semibold">Promocionar</a>
                             <a href="{% url 'negocio:solicitar_modificacion_torneo' torneo.id %}" class="px-3 py-1 bg-yellow-900/30 text-yellow-500 text-xs rounded border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition font-semibold">Solicitar Edición</a>
                             {% endif %}
                         </div>
@@ -249,35 +286,34 @@
         </section>
 
     {% elif user.rol == 'DEPORTISTA' %}
-        <section id="canchas-seccion">
-            <h3 class="text-xl font-semibold text-neon mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Canchas Cerca de Ti
-            </h3>
-
-            <!-- Map Placeholder Premium -->
-            <div class="w-full h-64 bg-gradient-to-br from-gray-900 via-dark to-black rounded-2xl mb-10 border border-gray-800/60 relative overflow-hidden group hover:border-neon/40 hover:shadow-[0_0_40px_rgba(0,255,136,0.1)] transition-all duration-700 cursor-pointer">
-                <!-- Grid pattern background -->
-                <div class="absolute inset-0 pattern-grid-lg text-gray-800/40 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
-
-                <!-- Animated radar blips -->
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-neon rounded-full shadow-[0_0_20px_#00ff88] group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-neon rounded-full animate-ping opacity-75"></div>
-                </div>
-
-                <div class="absolute top-[30%] left-[25%] w-3 h-3 bg-neon/60 rounded-full shadow-[0_0_10px_#00ff88]">
-                    <div class="absolute inset-0 bg-neon rounded-full animate-ping opacity-40" style="animation-delay: 1s"></div>
-                </div>
-                <div class="absolute bottom-[25%] right-[20%] w-3 h-3 bg-neon/60 rounded-full shadow-[0_0_10px_#00ff88]">
-                    <div class="absolute inset-0 bg-neon rounded-full animate-ping opacity-40" style="animation-delay: 2s"></div>
-                </div>
-
-                <!-- Overlay hover state -->
-                <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[3px] opacity-0 group-hover:opacity-100 transition-all duration-500">
-                    <svg class="w-12 h-12 text-neon mb-3 transform scale-75 group-hover:scale-100 transition-transform duration-500 drop-shadow-[0_0_10px_rgba(0,255,136,0.8)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                    <span class="text-white font-bold tracking-wide transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">Explorar Mapa Interactivo</span>
-                </div>
-            </div>
+        <!-- Alerta de Pagos Pendientes -->
+        {% if mis_reservas %}
+            {% with pendientes=mis_reservas|dictsortreversed:"id" %}
+                {% for res in pendientes %}
+                    {% if not res.pagado and res.estado == 'PROGRAMADA' %}
+                        <div class="mb-8 bg-gradient-to-r from-yellow-500/10 to-orange-500/5 border border-yellow-500/30 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse-slow">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold">Reserva pendiente de pago</h4>
+                                    <p class="text-gray-400 text-sm">Tu espacio en <span class="text-yellow-500">{{ res.cancha.nombre }}</span> para el {{ res.fecha|date:"d M" }} aún no está asegurado.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <a href="{% url 'negocio:iniciar_pago_wompi' res.id %}" class="px-6 py-2.5 bg-yellow-500 text-black font-bold rounded-xl hover:bg-yellow-400 transition shadow-lg shadow-yellow-500/20">
+                                    PAGAR AHORA
+                                </a>
+                                <a href="{% url 'negocio:factura_detalle' res.factura.id %}" class="px-6 py-2.5 bg-gray-800 text-white font-bold rounded-xl border border-gray-700 hover:bg-gray-700 transition">
+                                    Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endwith %}
+        {% endif %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for cancha in canchas_disponibles %}

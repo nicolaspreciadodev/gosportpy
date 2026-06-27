@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-20 text-center">
+    <div class="bg-gray-900/50 backdrop-blur-md border border-neon/30 rounded-3xl p-12 shadow-[0_0_50px_rgba(0,255,136,0.1)] relative overflow-hidden">
+        <!-- Floating shapes for design -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-neon opacity-10 blur-3xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-neon opacity-5 blur-3xl"></div>
+
+        <div class="mb-8 relative">
+            <div class="w-24 h-24 bg-neon/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-neon/20 shadow-[0_0_20px_rgba(0,255,136,0.2)]">
+                <svg class="w-12 h-12 text-neon animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 class="text-4xl font-black text-white tracking-tight italic">¡PAGO EXITOSO!</h2>
+            <div class="h-1 w-24 bg-neon mx-auto mt-2 rounded-full"></div>
+        </div>
+
+        <div class="space-y-4 mb-10">
+            <p class="text-gray-300 text-lg">Tu reserva para <span class="text-white font-bold">{{ reserva.cancha.nombre }}</span> ha sido confirmada.</p>
+            <div class="bg-dark/50 border border-gray-800 rounded-2xl p-6 inline-block">
+                <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Referencia de Pago</p>
+                <p class="text-neon font-mono font-bold">{{ factura.referencia_pago }}</p>
+            </div>
+            <p class="text-gray-400 text-sm">Pronto recibirás un correo electrónico con los detalles de tu partido.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'dashboard' %}" class="px-8 py-4 bg-neon text-dark font-black rounded-2xl hover:bg-green-400 transition-all duration-300 shadow-[0_10px_20px_rgba(0,255,136,0.3)] hover:scale-105">
+                VOLVER AL MENÚ PRINCIPAL
+            </a>
+            <a href="{% url 'negocio:factura_detalle' factura.id %}" class="px-8 py-4 bg-gray-800 text-white font-bold rounded-2xl border border-gray-700 hover:bg-gray-700 transition-all duration-300">
+                VER FACTURA
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

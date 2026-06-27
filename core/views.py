@@ -17,8 +17,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['total_canchas'] = Cancha.objects.count()
             context['total_reservas'] = Reserva.objects.count()
             context['torneos_pendientes'] = Torneo.objects.filter(estado='PENDIENTE')
-            from negocio.models import SolicitudModificacionTorneo
+            from negocio.models import SolicitudModificacionTorneo, PromocionTorneo
             context['solicitudes_modificacion'] = SolicitudModificacionTorneo.objects.filter(estado='PENDIENTE')
+            context['promociones_pendientes'] = PromocionTorneo.objects.filter(estado='PENDIENTE')
             
         if user.rol == 'DUEÑO':
             context['mis_canchas'] = Cancha.objects.filter(dueño=user)

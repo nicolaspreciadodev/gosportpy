@@ -78,28 +78,48 @@
                 Cupos Llenos
             </div>
             {% else %}
-                {% if request.user.equipos.count > 0 %}
-                <form action="{% url 'negocio:inscribir_torneo' torneo.id %}" method="post" class="flex flex-col sm:flex-row items-center gap-4">
-                    {% csrf_token %}
-                    <select name="equipo_id" required class="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl focus:border-neon focus:outline-none transition w-full sm:w-64">
-                        <option value="">-- Selecciona tu equipo --</option>
-                        {% for eq in request.user.equipos.all %}
-                            <option value="{{ eq.id }}">{{ eq.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="w-full sm:w-auto bg-neon text-dark font-bold px-6 py-2 rounded-xl hover:bg-green-300 transition shadow border border-neon/50">
-                        Inscribirse al Torneo
-                    </button>
-                    <span class="text-gray-400 text-sm ml-2">Quedan {{ torneo.max_equipos|add:"-1" }} cupos</span>
-                </form>
-                {% else %}
-                <div class="p-4 bg-gray-800 rounded-lg border border-gray-700 w-full flex items-center justify-between">
-                    <p class="text-gray-300">Debes pertenecer a un equipo para competir en torneos.</p>
-                    <a href="{% url 'negocio:crear_equipo' %}" class="bg-gray-700 text-white font-medium px-4 py-2 rounded-lg hover:bg-gray-600 border border-gray-600 transition shadow">
-                        Crear Equipo
-                    </a>
+                <div class="flex flex-col gap-6">
+                    <!-- Individual Registration (if Tenis) -->
+                    {% if torneo.deporte.nombre.lower() == 'tenis' %}
+                    <form action="{% url 'negocio:inscribir_torneo' torneo.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="group relative overflow-hidden bg-yellow-500 text-dark font-black px-8 py-4 rounded-2xl hover:bg-yellow-400 transition-all duration-300 shadow-[0_10px_20px_rgba(234,179,8,0.2)] hover:scale-105">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                                INSCRIBIRSE INDIVIDUALMENTE (TENIS)
+                            </span>
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <div class="h-px bg-gray-800 my-2"></div>
+
+                    <!-- Team Registration -->
+                    {% if request.user.equipos.count > 0 %}
+                    <form action="{% url 'negocio:inscribir_torneo' torneo.id %}" method="post" class="flex flex-col sm:flex-row items-center gap-4">
+                        {% csrf_token %}
+                        <div class="relative flex-1 w-full max-w-sm">
+                            <select name="equipo_id" required class="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-xl focus:border-neon focus:outline-none transition appearance-none">
+                                <option value="">-- Selecciona tu equipo --</option>
+                                {% for eq in request.user.equipos.all %}
+                                    <option value="{{ eq.id }}">{{ eq.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <i data-lucide="users" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto bg-neon text-dark font-bold px-6 py-3 rounded-xl hover:bg-green-300 transition shadow border border-neon/50">
+                            Inscribir a mi Equipo
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-gray-700 border-dashed w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-gray-400 text-sm">¿Representas a un equipo completo? Crea uno para inscribirlos.</p>
+                        <a href="{% url 'negocio:crear_equipo' %}" class="bg-gray-700 text-white font-medium px-4 py-2 rounded-lg hover:bg-gray-600 border border-gray-600 transition shadow text-sm">
+                            + Crear Equipo
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             {% endif %}
         </div>
         {% endif %}

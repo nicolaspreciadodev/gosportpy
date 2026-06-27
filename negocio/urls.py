@@ -28,4 +28,6 @@ urlpatterns = [
     path('reporte-reservas-excel/', views.ReporteReservasExcelView.as_view(), name='reporte_reservas_excel'),
     path('reporte-reservas-word/', views.ReporteReservasWordView.as_view(), name='reporte_reservas_word'),
     path('reporte-torneos/', views.ReporteTorneosView.as_view(), name='reporte_torneos'),
+    path('torneos/promocion/<int:torneo_id>/solicitar/', views.SolicitarPromocionView.as_view(), name='solicitar_promocion'),
+    path('torneos/promocion/<int:promo_id>/gestionar/', views.GestionarPromocionView.as_view(), name='gestionar_promocion'),
 ]

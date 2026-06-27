@@ -42,22 +42,41 @@ class Reserva(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas')
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='reservas')
     fecha = models.DateField()
-    hora = models.TimeField()
+    hora = models.TimeField(help_text="Hora de inicio")
+    hora_fin = models.TimeField(help_text="Hora de fin", null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PROGRAMADA')
     pagado = models.BooleanField(default=False)
     
     def clean(self):
-        # Check if a reservation already exists for the same court, date, and hour
+        # Si no hay hora_fin, asumimos 1 hora
+        import datetime
+        dt_inicio = datetime.datetime.combine(self.fecha, self.hora)
+        if not self.hora_fin:
+            dt_fin = dt_inicio + datetime.timedelta(hours=1)
+            self.hora_fin = dt_fin.time()
+        else:
+            dt_fin = datetime.datetime.combine(self.fecha, self.hora_fin)
+
+        if dt_fin <= dt_inicio:
+            raise ValidationError("La hora de fin debe ser posterior a la hora de inicio.")
+
+        # Check overlap
+        from django.db.models import Q
         overlapping = Reserva.objects.filter(
             cancha=self.cancha,
-            fecha=self.fecha,
-            hora=self.hora
-        )
+            fecha=self.fecha
+        ).exclude(estado='CANCELADA')
+        
         if self.pk:
             overlapping = overlapping.exclude(pk=self.pk)
             
-        if overlapping.exists():
-            raise ValidationError(f"La cancha {self.cancha.nombre} ya se encuentra reservada para la fecha {self.fecha} a las {self.hora}.")
+        for res in overlapping:
+            # Lógica de solapamiento de rangos
+            res_inicio = datetime.datetime.combine(res.fecha, res.hora)
+            res_fin = datetime.datetime.combine(res.fecha, res.hora_fin)
+            
+            if (dt_inicio < res_fin) and (dt_fin > res_inicio):
+                raise ValidationError(f"La cancha {self.cancha.nombre} ya tiene una reserva en ese horario ({res.hora.strftime('%H:%M')} - {res.hora_fin.strftime('%H:%M')}).")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -174,4 +193,24 @@ class SolicitudModificacionTorneo(models.Model):
     
     def __str__(self):
         return f"Solicitud para {self.torneo.nombre} ({self.get_estado_display()})"
+
+
+class PromocionTorneo(models.Model):
+    """
+    Representa una solicitud de publicidad de un torneo en una cancha específica.
+    """
+    ESTADO_CHOICES = (
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADO', 'Aprobado'),
+        ('RECHAZADO', 'Rechazado'),
+    )
+    torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='promociones')
+    cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='promociones')
+    texto_promocional = models.TextField(help_text="Texto descriptivo para la publicidad del torneo.")
+    imagen_promocional = models.ImageField(upload_to='promociones/', null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Publicidad {self.torneo.nombre} en {self.cancha.nombre} ({self.get_estado_display()})"
 

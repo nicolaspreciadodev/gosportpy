@@ -30,6 +30,10 @@ class CanchaListView(View):
     def get(self, request):
         canchas = Cancha.objects.select_related('deporte', 'dueño').all()
         
+        # Si el usuario es dueño, solo ve sus propias canchas según el requerimiento "Mis Canchas"
+        if request.user.is_authenticated and request.user.rol == 'DUEÑO' and not request.user.is_superuser:
+            canchas = canchas.filter(dueño=request.user)
+        
         deporte_id = request.GET.get('deporte')
         q = request.GET.get('q')
         min_precio = request.GET.get('min_precio')
@@ -200,10 +204,13 @@ class GestionarDisponibilidadView(RoleRequiredMixin, View):
             disp = form.save(commit=False)
             disp.cancha = cancha
             try:
+                # El sistema ya genera los slots dinámicamente desde el rango
+                # así que solo guardamos el rango completo una vez.
                 disp.save()
-                messages.success(request, 'Horario de disponibilidad agregado.')
+                messages.success(request, f'Horario configurado exitosamente para el {disp.get_dia_semana_display()}.')
             except Exception as e:
-                messages.error(request, 'Ese horario ya existe o hay un conflicto.')
+                messages.error(request, f'Ocurrió un error o ya existe un horario similar: {str(e)}')
+            
             return redirect('canchas:disponibilidad', pk=pk)
 
         disponibilidades = cancha.disponibilidades.all().order_by('dia_semana', 'hora_inicio')

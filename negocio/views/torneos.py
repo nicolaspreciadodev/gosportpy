@@ -44,27 +44,34 @@ class InscribirEquipoView(LoginRequiredMixin, View):
         torneo = get_object_or_404(Torneo, id=torneo_id)
         equipo_id = request.POST.get('equipo_id')
 
-        if not equipo_id:
+        # Permitir inscripción individual en deportes como Tenis
+        if not equipo_id and torneo.deporte and torneo.deporte.nombre.lower() == 'tenis':
+            # Buscamos si el usuario ya tiene un equipo individual para este torneo
+            equipo = Equipo.objects.filter(jugadores=request.user, nombre__icontains=f"Individual - {request.user.username}").first()
+            if not equipo:
+                equipo = Equipo.objects.create(nombre=f"Individual - {request.user.first_name or request.user.username}")
+                equipo.jugadores.add(request.user)
+        elif not equipo_id:
             messages.error(request, 'Debe seleccionar un equipo válido.')
-            return redirect('dashboard')
-
-        equipo = get_object_or_404(Equipo, id=equipo_id)
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
+        else:
+            equipo = get_object_or_404(Equipo, id=equipo_id)
 
         if request.user not in equipo.jugadores.all():
             messages.error(request, 'No tienes permiso para inscribir este equipo.')
-            return redirect('dashboard')
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
 
         if torneo.estado != 'PUBLICADO':
             messages.error(request, 'El torneo no está abierto para inscripciones.')
-            return redirect('dashboard')
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
 
         if equipo.torneos.filter(id=torneo.id).exists():
-            messages.error(request, 'Tu equipo ya está inscrito en este torneo.')
-            return redirect('dashboard')
+            messages.error(request, 'Ya estás inscrito en este torneo.')
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
             
         if torneo.equipos.count() >= torneo.max_equipos:
-            messages.error(request, 'El torneo ya ha alcanzado el límite máximo de equipos permitidos.')
-            return redirect('dashboard')
+            messages.error(request, 'El torneo ya ha alcanzado el límite máximo de participantes.')
+            return redirect('negocio:torneo_detalle', pk=torneo.id)
 
         equipo.torneos.add(torneo)
         
@@ -75,8 +82,8 @@ class InscribirEquipoView(LoginRequiredMixin, View):
             pass
             
         precio = f"${torneo.precio_inscripcion:,.2f} COP" if torneo.precio_inscripcion else "Gratis"
-        messages.success(request, f'¡El equipo {equipo.nombre} ha sido pre-inscrito! Valor a pagar: {precio}. Por favor coordina el pago con el administrador.')
-        return redirect('dashboard')
+        messages.success(request, f'¡Inscripción exitosa! Valor a pagar: {precio}. Por favor coordina el pago con el administrador.')
+        return redirect('negocio:torneo_detalle', pk=torneo.id)
 
 
 from typing import Dict, List
