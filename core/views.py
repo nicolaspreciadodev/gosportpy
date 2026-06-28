@@ -20,6 +20,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             from negocio.models import SolicitudModificacionTorneo, PromocionTorneo
             context['solicitudes_modificacion'] = SolicitudModificacionTorneo.objects.filter(estado='PENDIENTE')
             context['promociones_pendientes'] = PromocionTorneo.objects.filter(estado='PENDIENTE')
+            from usuarios.models import SolicitudRolDueño
+            context['solicitudes_rol_pendientes'] = SolicitudRolDueño.objects.filter(estado='PENDIENTE').count()
             
         if user.rol == 'DUEÑO':
             context['mis_canchas'] = Cancha.objects.filter(dueño=user)
