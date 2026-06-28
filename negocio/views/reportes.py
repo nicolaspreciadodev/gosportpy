@@ -267,3 +267,77 @@ class ReporteReservasWordView(LoginRequiredMixin, View):
         except Exception as e:
             logger.error(f"Error generando Word de reservas: {e}")
             return HttpResponse(f"Error generando reporte: {e}", status=500)
+
+
+# ====================================================================
+# HISTORIAL GLOBAL DE RESERVAS (SOLO SUPERADMIN)
+# ====================================================================
+
+from django.core.paginator import Paginator
+from usuarios.models import CustomUser as UserModel
+
+
+class AdminHistorialReservasView(View):
+    """Vista exclusiva del SuperAdmin: historial cronológico de reservas de TODA la plataforma.
+
+    Permite filtrar por:
+        - Usuario (búsqueda por username o email)
+        - Cancha (búsqueda por nombre)
+        - Estado de reserva
+        - Rango de fechas (desde / hasta)
+
+    Muestra por reserva: Usuario, Cancha/Establecimiento, Horario (inicio – fin),
+    Estado y Método de pago (desde Factura si existe).
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("Acceso restringido al SuperAdmin.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        reservas = Reserva.objects.select_related(
+            'usuario', 'cancha', 'cancha__dueño', 'factura'
+        ).order_by('-fecha', '-hora')
+
+        # ── Filtros ────────────────────────────────────────────────────
+        usuario_q = request.GET.get('usuario_q', '').strip()
+        cancha_q = request.GET.get('cancha_q', '').strip()
+        estado_q = request.GET.get('estado', '').strip()
+        fecha_desde = request.GET.get('fecha_desde', '').strip()
+        fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+
+        if usuario_q:
+            reservas = reservas.filter(
+                Q(usuario__username__icontains=usuario_q) |
+                Q(usuario__email__icontains=usuario_q) |
+                Q(usuario__first_name__icontains=usuario_q) |
+                Q(usuario__last_name__icontains=usuario_q)
+            )
+        if cancha_q:
+            reservas = reservas.filter(cancha__nombre__icontains=cancha_q)
+        if estado_q:
+            reservas = reservas.filter(estado=estado_q)
+        if fecha_desde:
+            reservas = reservas.filter(fecha__gte=fecha_desde)
+        if fecha_hasta:
+            reservas = reservas.filter(fecha__lte=fecha_hasta)
+
+        # ── Paginación ─────────────────────────────────────────────────
+        paginator = Paginator(reservas, 25)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'page_obj': page_obj,
+            'total_reservas': reservas.count(),
+            # Filtros activos (para repoblar el form)
+            'usuario_q': usuario_q,
+            'cancha_q': cancha_q,
+            'estado_activo': estado_q,
+            'fecha_desde': fecha_desde,
+            'fecha_hasta': fecha_hasta,
+            'estados': Reserva.ESTADO_CHOICES,
+        }
+        return render(request, 'negocio/admin_historial_reservas.html', context)

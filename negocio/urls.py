@@ -31,4 +31,7 @@ urlpatterns = [
     path('reporte-torneos/', views.ReporteTorneosView.as_view(), name='reporte_torneos'),
     path('torneos/promocion/<int:torneo_id>/solicitar/', views.SolicitarPromocionView.as_view(), name='solicitar_promocion'),
     path('torneos/promocion/<int:promo_id>/gestionar/', views.GestionarPromocionView.as_view(), name='gestionar_promocion'),
+    # Panel del SuperAdmin
+    path('admin/historial-reservas/', views.AdminHistorialReservasView.as_view(), name='admin_historial_reservas'),
 ]
+

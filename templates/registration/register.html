@@ -133,32 +133,13 @@
                 {% endfor %}
             </div>
 
-            <!-- Rol -->
-            <div class="form-group">
-                <label class="form-label">¿Cómo usarás GoSport?</label>
-                <div class="role-grid">
-                    <label class="role-option">
-                        <input type="radio" name="rol" value="DEPORTISTA"
-                               {% if form.rol.value == 'DEPORTISTA' or not form.rol.value %}checked{% endif %}>
-                        <div class="role-card">
-                            <div class="role-emoji">⚽</div>
-                            <div class="role-name">Deportista</div>
-                            <div class="role-desc">Reservo canchas</div>
-                        </div>
-                    </label>
-                    <label class="role-option">
-                        <input type="radio" name="rol" value="DUEÑO"
-                               {% if form.rol.value == 'DUEÑO' %}checked{% endif %}>
-                        <div class="role-card">
-                            <div class="role-emoji">🏟️</div>
-                            <div class="role-name">Dueño</div>
-                            <div class="role-desc">Ofrezco canchas</div>
-                        </div>
-                    </label>
+            <!-- Nota informativa sobre roles -->
+            <div style="background: rgba(0,228,109,0.06); border: 1px solid rgba(0,228,109,0.2); border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 0.5rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                <span style="font-size: 1.1rem; flex-shrink:0;">⚽</span>
+                <div>
+                    <p style="font-size: 0.8rem; color: #00e46d; font-weight: 600; margin-bottom: 0.15rem;">Te registrarás como Deportista</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">¿Tienes una cancha y quieres ofrecerla? Después de crear tu cuenta podrás solicitar el rol de <strong style="color:var(--text-primary)">Dueño de Cancha</strong> desde tu perfil.</p>
                 </div>
-                {% for error in form.rol.errors %}
-                    <p class="form-error">{{ error }}</p>
-                {% endfor %}
             </div>
 
             <!-- Contraseña -->

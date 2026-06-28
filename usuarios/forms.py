@@ -3,14 +3,15 @@
 import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, SolicitudRolDueño
 
 
 class RegistroUsuarioForm(UserCreationForm):
-    """Extiende UserCreationForm añadiendo campos de nombre y rol.
+    """Extiende UserCreationForm para el registro público.
 
-    Excluye campos sensibles como is_staff e is_superuser.
-    El campo rol presenta solo las opciones válidas para registro público.
+    El campo 'rol' NO se expone: todos los usuarios nuevos se registran
+    automáticamente como 'DEPORTISTA'. Para convertirse en Dueño de Cancha
+    deben enviar una solicitud que el SuperAdmin aprueba.
     """
 
     first_name = forms.CharField(
@@ -35,10 +36,17 @@ class RegistroUsuarioForm(UserCreationForm):
             'first_name',
             'last_name',
             'email',
-            'rol',
             'password1',
             'password2',
         ]
+
+    def save(self, commit=True):
+        """Guarda el usuario con rol DEPORTISTA por defecto."""
+        user = super().save(commit=False)
+        user.rol = 'DEPORTISTA'
+        if commit:
+            user.save()
+        return user
 
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name', '')
@@ -112,3 +120,26 @@ class PerfilForm(forms.ModelForm):
         if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError('Este correo ya está en uso por otra cuenta.')
         return email
+
+
+class SolicitudRolDueñoForm(forms.ModelForm):
+    """Formulario para que un Deportista solicite el rol de Dueño de Cancha."""
+
+    motivo = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'rows': 5,
+            'placeholder': 'Cuéntanos brevemente tu establecimiento, dirección aproximada y por qué deseas ser parte de GoSport como Dueño de Cancha...',
+        }),
+        label='Motivo de la solicitud',
+        min_length=30,
+        max_length=1000,
+        error_messages={
+            'min_length': 'El motivo debe tener al menos 30 caracteres.',
+            'max_length': 'El motivo no puede superar los 1000 caracteres.',
+        }
+    )
+
+    class Meta:
+        model = SolicitudRolDueño
+        fields = ['motivo']

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Historial de Reservas — GoSport Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-800 pb-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <span class="text-2xl">📋</span>
+                <h1 class="text-2xl font-bold text-white">Historial Global de Reservas</h1>
+            </div>
+            <p class="text-gray-400 text-sm">
+                Vista completa de todas las reservas de la plataforma.
+                <span class="ml-2 px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-xs text-gray-300 font-semibold">
+                    {{ total_reservas }} reserva{{ total_reservas|pluralize:"s" }} encontrada{{ total_reservas|pluralize:"s" }}
+                </span>
+            </p>
+        </div>
+        <a href="{% url 'dashboard' %}"
+           class="bg-gray-800 text-gray-300 font-semibold px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
+            ← Volver al Dashboard
+        </a>
+    </header>
+
+    <!-- Panel de filtros -->
+    <form method="GET" class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">🔍 Filtrar reservas</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Usuario (nombre / email)</label>
+                <input type="text" name="usuario_q" value="{{ usuario_q }}"
+                    placeholder="ej: juan o juan@email.com"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-green-500/50 transition">
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Cancha</label>
+                <input type="text" name="cancha_q" value="{{ cancha_q }}"
+                    placeholder="ej: Estadio Central"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-green-500/50 transition">
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Estado</label>
+                <select name="estado"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-green-500/50 transition">
+                    <option value="">Todos</option>
+                    {% for val, label in estados %}
+                    <option value="{{ val }}" {% if estado_activo == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Fecha desde</label>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-green-500/50 transition">
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Fecha hasta</label>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-green-500/50 transition">
+            </div>
+        </div>
+        <div class="flex gap-3 mt-4">
+            <button type="submit"
+                class="bg-green-500 hover:bg-green-400 text-black font-bold px-5 py-2 rounded-lg text-sm transition">
+                Filtrar
+            </button>
+            <a href="{% url 'negocio:admin_historial_reservas' %}"
+               class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold px-5 py-2 rounded-lg text-sm transition">
+                Limpiar filtros
+            </a>
+        </div>
+    </form>
+
+    <!-- Tabla -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        {% if page_obj %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-5 py-3">#</th>
+                        <th class="px-5 py-3">Usuario</th>
+                        <th class="px-5 py-3">Cancha / Establecimiento</th>
+                        <th class="px-5 py-3">Horario</th>
+                        <th class="px-5 py-3">Estado</th>
+                        <th class="px-5 py-3">Método de pago</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800 text-white">
+                    {% for reserva in page_obj %}
+                    <tr class="hover:bg-gray-800/40 transition">
+                        <!-- ID -->
+                        <td class="px-5 py-4 text-gray-500 text-xs font-mono">#{{ reserva.id }}</td>
+
+                        <!-- Usuario -->
+                        <td class="px-5 py-4">
+                            <div class="font-semibold text-sm text-white">
+                                {{ reserva.usuario.get_full_name|default:reserva.usuario.username }}
+                            </div>
+                            <div class="text-gray-500 text-xs mt-0.5">{{ reserva.usuario.email }}</div>
+                            <span class="inline-block mt-1 px-1.5 py-0.5 rounded text-xs border border-gray-700 bg-gray-800 text-gray-400">
+                                {{ reserva.usuario.get_rol_display }}
+                            </span>
+                        </td>
+
+                        <!-- Cancha -->
+                        <td class="px-5 py-4">
+                            <div class="font-semibold text-sm text-white">{{ reserva.cancha.nombre }}</div>
+                            <div class="text-gray-500 text-xs mt-0.5">{{ reserva.cancha.ubicacion|default:"—" }}</div>
+                            <div class="text-gray-600 text-xs mt-0.5">
+                                Dueño: {{ reserva.cancha.dueño.get_full_name|default:reserva.cancha.dueño.username }}
+                            </div>
+                        </td>
+
+                        <!-- Horario -->
+                        <td class="px-5 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-white">{{ reserva.fecha|date:"d/m/Y" }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                {{ reserva.hora|time:"H:i" }} — {{ reserva.hora_fin|time:"H:i"|default:"—" }}
+                            </div>
+                        </td>
+
+                        <!-- Estado -->
+                        <td class="px-5 py-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap
+                                {% if reserva.estado == 'PROGRAMADA' %}bg-blue-500/10 border-blue-500/30 text-blue-400
+                                {% elif reserva.estado == 'COMPLETADA' %}bg-green-500/10 border-green-500/30 text-green-400
+                                {% else %}bg-red-500/10 border-red-500/30 text-red-400{% endif %}">
+                                {% if reserva.estado == 'PROGRAMADA' %}📅 Programada
+                                {% elif reserva.estado == 'COMPLETADA' %}✅ Completada
+                                {% else %}❌ Cancelada{% endif %}
+                            </span>
+                        </td>
+
+                        <!-- Método de pago -->
+                        <td class="px-5 py-4">
+                            {% if reserva.factura %}
+                                {% if reserva.factura.wompi_transaction_id %}
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-purple-400 text-xs font-semibold">💳 Wompi</span>
+                                </div>
+                                <div class="text-gray-600 text-xs mt-0.5 font-mono">
+                                    {{ reserva.factura.wompi_transaction_id|truncatechars:16 }}
+                                </div>
+                                {% else %}
+                                <span class="text-gray-400 text-xs">💰 Procesado</span>
+                                {% endif %}
+                                <div class="text-green-400 text-xs font-bold mt-0.5">
+                                    ${{ reserva.factura.total|floatformat:0 }}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-600 text-xs italic">Sin factura</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+        <div class="flex justify-between items-center px-5 py-4 border-t border-gray-800 bg-gray-900/50">
+            <p class="text-gray-500 text-sm">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                &nbsp;·&nbsp; {{ total_reservas }} reservas en total
+            </p>
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&usuario_q={{ usuario_q }}&cancha_q={{ cancha_q }}&estado={{ estado_activo }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+                   class="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-300 text-sm hover:bg-gray-700 transition">
+                    ← Anterior
+                </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&usuario_q={{ usuario_q }}&cancha_q={{ cancha_q }}&estado={{ estado_activo }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+                   class="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-300 text-sm hover:bg-gray-700 transition">
+                    Siguiente →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="py-16 text-center">
+            <div class="text-5xl mb-4">📭</div>
+            <p class="text-gray-400 font-semibold">No se encontraron reservas con los filtros aplicados.</p>
+            <p class="text-gray-600 text-sm mt-1">Intenta ajustar los criterios de búsqueda.</p>
+            <a href="{% url 'negocio:admin_historial_reservas' %}"
+               class="inline-block mt-4 px-5 py-2 bg-gray-800 text-gray-300 rounded-lg text-sm hover:bg-gray-700 transition">
+                Ver todas las reservas
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
