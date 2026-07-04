@@ -36,6 +36,7 @@ class RegistroUsuarioForm(UserCreationForm):
             'first_name',
             'last_name',
             'email',
+            'rol',
             'password1',
             'password2',
         ]
