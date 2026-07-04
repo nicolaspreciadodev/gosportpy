@@ -6,7 +6,7 @@
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon via-green-400 to-transparent"></div>
         
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-white mb-2">Reservar <span class="text-neon">{{ cancha.nombre }}</span></h2>
+            <h2 class="text-3xl font-bold text-white mb-2">Book <span class="text-neon">{{ cancha.nombre }}</span></h2>
             <p class="text-gray-400 flex items-center gap-2">
                 <svg class="w-4 h-4 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                 {{ cancha.ubicacion }}
@@ -20,22 +20,22 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-300">Fecha</label>
+                    <label class="block text-sm font-medium text-gray-300">Date</label>
                     <input type="text" name="fecha" id="id_fecha" required 
                            class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300"
-                           placeholder="Seleccione la fecha...">
+                           placeholder="Select date...">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-300">Desde</label>
+                        <label class="block text-sm font-medium text-gray-300">From</label>
                         <select name="hora" id="hora-inicio" required
                                class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300">
                             <option value="">--:--</option>
                         </select>
                     </div>
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-300">Hasta</label>
+                        <label class="block text-sm font-medium text-gray-300">To</label>
                         <select name="hora_fin" id="hora-fin" required
                                class="w-full bg-dark border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition duration-300">
                             <option value="">--:--</option>
@@ -46,23 +46,23 @@
 
             <div id="precio-contenedor" class="bg-dark/50 p-6 rounded-xl border border-gray-800 flex flex-col gap-2">
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-400">Precio por hora:</span>
+                    <span class="text-gray-400">Price per hour:</span>
                     <span class="text-white font-bold">$ {{ cancha.precio|floatformat:"0" }} COP</span>
                 </div>
                 <div class="flex justify-between items-center border-t border-gray-800 pt-2 mt-2">
-                    <span class="text-gray-400 font-bold">Total a pagar:</span>
+                    <span class="text-gray-400 font-bold">Total to pay:</span>
                     <span id="total-precio" class="text-3xl font-black text-neon">$ 0 COP</span>
                 </div>
-                <p id="error-rango" class="text-red-500 text-xs mt-1 hidden italic">La hora de fin debe ser posterior a la de inicio.</p>
+                <p id="error-rango" class="text-red-500 text-xs mt-1 hidden italic">The end time must be after the start time.</p>
             </div>
 
             <div class="flex gap-4 pt-4 border-t border-gray-800">
                 <a href="{% url 'dashboard' %}" class="flex-1 text-center py-3 px-4 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white transition duration-300">
-                    Cancelar
+                    Cancel
                 </a>
                 <button type="submit" class="flex-1 relative overflow-hidden bg-gray-800 text-white font-bold py-3 px-4 rounded-xl border border-gray-700 hover:border-neon transition-all duration-300 group">
                     <div class="absolute inset-0 bg-neon origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
-                    <span class="relative z-10 group-hover:text-black transition-colors duration-300">Confirmar Reserva</span>
+                    <span class="relative z-10 group-hover:text-black transition-colors duration-300">Confirm Booking</span>
                 </button>
             </div>
         </form>
@@ -140,8 +140,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 if(data.slots && data.slots.length > 0) {
-                    horaInicioSelect.innerHTML = '<option value="">Seleccione...</option>';
-                    horaFinSelect.innerHTML = '<option value="">Seleccione...</option>';
+                    horaInicioSelect.innerHTML = '<option value="">Select...</option>';
+                    horaFinSelect.innerHTML = '<option value="">Select...</option>';
                     
                     data.slots.forEach(slot => {
                         const opt = document.createElement('option');
@@ -166,8 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         horaFinSelect.appendChild(optFinal);
                     }
                 } else {
-                    horaInicioSelect.innerHTML = '<option value="">No hay disponibilidad</option>';
-                    horaFinSelect.innerHTML = '<option value="">No hay disponibilidad</option>';
+                    horaInicioSelect.innerHTML = '<option value="">No availability</option>';
+                    horaFinSelect.innerHTML = '<option value="">No availability</option>';
                 }
             });
     }
@@ -177,11 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
     maxDate.setDate(maxDate.getDate() + 30); // 30 days max limit rule
     
     flatpickr(fechaInput, {
-        locale: "es",
         minDate: "today",
         maxDate: maxDate,
         altInput: true,
-        altFormat: "d \\de F Y",
+        altFormat: "F d, Y",
         dateFormat: "Y-m-d",
         onChange: function(selectedDates, dateStr, instance) {
             cargarHorarios(dateStr);

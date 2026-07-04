@@ -38,36 +38,34 @@
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'dashboard' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
                 Dashboard
             </a>
-
             <a href="{% url 'usuarios:perfil' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'perfil' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Mi Perfil
+                My Profile
             </a>
-
             <a href="{% url 'negocio:torneo_list' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'torneo_list' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Torneos
+                Tournaments
             </a>
 
             {% if user.rol == 'DEPORTISTA' and not user.is_superuser %}
             <a href="{% url 'negocio:mis_equipos' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'mis_equipos' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Mis Equipos
+                My Teams
             </a>
             {% endif %}
 
             {% if user.rol == 'DUEÑO' and not user.is_superuser %}
             <a href="{% url 'negocio:panel_reservas' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'panel_reservas' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Reservas Activas
+                Active Bookings
             </a>
             <a href="{% url 'canchas:lista' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.app_name == 'canchas' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Mis Canchas
+                My Courts
             </a>
             <a href="{% url 'negocio:mis_torneos' %}"
                 class="block px-4 py-2 rounded font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'mis_torneos' %}text-neon bg-gray-800/50 border-l-4 border-neon{% else %}text-gray-300 hover:bg-gray-800 hover:text-neon{% endif %}">
-                Mis Torneos
+                My Tournaments
             </a>
             {% endif %}
         </nav>
@@ -81,7 +79,7 @@
                     <p class="text-sm font-semibold truncate">{{ user.first_name|default:user.username }}</p>
                     <p class="text-xs text-gray-400 capitalize truncate">
                         {% if user.is_superuser %}
-                            Superadministrador
+                            Super Administrator
                         {% else %}
                             {{ user.get_rol_display }}
                         {% endif %}
@@ -91,8 +89,7 @@
             <form action="{% url 'logout' %}" method="post" class="mt-4">
                 {% csrf_token %}
                 <button type="submit"
-                    class="w-full text-left text-sm text-red-400 hover:text-red-300 transition-colors">Cerrar
-                    Sesión</button>
+                    class="w-full text-left text-sm text-red-400 hover:text-red-300 transition-colors">Log Out</button>
             </form>
         </div>
     </aside>
@@ -137,7 +134,7 @@
             <h1 class="text-xl font-bold tracking-wider">Go<span class="text-neon">Sport</span></h1>
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
-                <button type="submit" class="text-red-400 text-sm font-medium">Salir</button>
+                <button type="submit" class="text-red-400 text-sm font-medium">Log Out</button>
             </form>
         </header>
 

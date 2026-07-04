@@ -5,21 +5,21 @@
 
     <header class="flex items-end justify-between border-b border-gray-800 pb-4">
         <div>
-            <h2 class="text-3xl font-bold text-white tracking-tight">Panel Principal</h2>
-            <p class="text-gray-400 mt-1">Resumen general de tu actividad en GoSport</p>
+            <h2 class="text-3xl font-black text-white tracking-tighter">Your Control Panel</h2>
+            <p class="text-gray-400 text-sm mt-1">Summary of your courts and registered tournaments</p>
         </div>
     </header>
     {% if user.is_superuser %}
         <section class="max-w-6xl mb-12">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <h3 class="text-2xl font-bold text-neon">Estadísticas Oficiales Globales</h3>
+                <h3 class="text-2xl font-bold text-neon">Global Official Statistics</h3>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{% url 'canchas:reporte_pdf' %}" download="auditoria_canchas.pdf" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-[0_0_10px_rgba(255,255,255,0.05)]">📄 Auditoría PDF</a>
-                    <a href="{% url 'canchas:reporte_excel' %}" download="auditoria_canchas.xlsx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.1)]">📊 Auditoría Excel</a>
-                    <a href="{% url 'canchas:reporte_word' %}" download="auditoria_canchas.docx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-blue-500 hover:text-white transition shadow-sm">📝 Auditoría Word</a>
-                    <a href="{% url 'negocio:reporte_reservas_pdf' %}" download="reservas.pdf" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-sm">📄 Reservas PDF</a>
-                    <a href="{% url 'negocio:reporte_reservas_excel' %}" download="reservas.xlsx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-sm">📊 Reservas Excel</a>
-                    <a href="{% url 'negocio:reporte_reservas_word' %}" download="reservas.docx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-blue-500 hover:text-white transition shadow-sm">📝 Reservas Word</a>
+                    <a href="{% url 'canchas:reporte_pdf' %}" download="court_audit.pdf" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-[0_0_10px_rgba(255,255,255,0.05)]">📄 Audit PDF</a>
+                    <a href="{% url 'canchas:reporte_excel' %}" download="court_audit.xlsx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.1)]">📊 Audit Excel</a>
+                    <a href="{% url 'canchas:reporte_word' %}" download="court_audit.docx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-blue-500 hover:text-white transition shadow-sm">📝 Audit Word</a>
+                    <a href="{% url 'negocio:reporte_reservas_pdf' %}" download="bookings.pdf" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-sm">📄 Bookings PDF</a>
+                    <a href="{% url 'negocio:reporte_reservas_excel' %}" download="bookings.xlsx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-sm">📊 Bookings Excel</a>
+                    <a href="{% url 'negocio:reporte_reservas_word' %}" download="bookings.docx" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-blue-500 hover:text-white transition shadow-sm">📝 Bookings Word</a>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -27,7 +27,7 @@
                 <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-6 flex items-center gap-4 hover:border-gray-600 transition group cursor-pointer">
                     <div class="p-4 bg-neon/10 rounded-lg text-neon group-hover:bg-neon/20 transition"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
                     <div>
-                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Usuarios Registrados</p>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Registered Users</p>
                         <h4 class="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{{ total_usuarios }}</h4>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                 <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-6 flex items-center gap-4 hover:border-gray-600 transition group cursor-pointer">
                     <div class="p-4 bg-blue-500/10 rounded-lg text-blue-400 group-hover:bg-blue-500/20 transition"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></div>
                     <div>
-                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Canchas Activas</p>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Active Courts</p>
                         <h4 class="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{{ total_canchas }}</h4>
                     </div>
                 </div>
@@ -43,22 +43,22 @@
                 <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-6 flex items-center gap-4 hover:border-gray-600 transition group cursor-pointer">
                     <div class="p-4 bg-purple-500/10 rounded-lg text-purple-400 group-hover:bg-purple-500/20 transition"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
                     <div>
-                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Reservas Globales</p>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Global Bookings</p>
                         <h4 class="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{{ total_reservas }}</h4>
                     </div>
                 </div>
             </div>
 
-            <h3 class="text-2xl font-bold text-neon mb-6">Aprobación de Campeonatos</h3>
+            <h3 class="text-2xl font-bold text-neon mb-6">Tournament Approvals</h3>
             <div class="bg-card border border-gray-800 rounded-xl overflow-hidden mb-12">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-800">
                         <tr>
-                            <th class="p-5 font-semibold">Copa/Torneo</th>
-                            <th class="p-5 font-semibold">Comisión Organizadora</th>
-                            <th class="p-5 font-semibold">Deporte</th>
-                            <th class="p-5 font-semibold">Fechas Oficiales</th>
-                            <th class="p-5 font-semibold text-right">Determinación</th>
+                            <th class="p-5 font-semibold">Copa/Tournament</th>
+                            <th class="p-5 font-semibold">Organizing Committee</th>
+                            <th class="p-5 font-semibold">Sport</th>
+                            <th class="p-5 font-semibold">Official Dates</th>
+                            <th class="p-5 font-semibold text-right">Determination</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-800">
@@ -76,8 +76,8 @@
                             <td class="p-5 text-right flex justify-end gap-2">
                                 <form action="{% url 'negocio:aprobar_torneo' torneo.id %}" method="post" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" name="action" value="aprobar" class="bg-green-500/20 text-green-400 font-semibold border border-green-500/30 px-4 py-2 rounded-lg hover:bg-green-500/40 hover:text-white transition shadow-[0_0_10px_rgba(34,197,94,0.1)]">Aprobar</button>
-                                    <button type="submit" name="action" value="rechazar" class="bg-red-500/10 text-red-500 font-semibold border border-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/30 hover:text-white transition ml-2 shadow-[0_0_10px_rgba(239,68,68,0.1)]">Denegar</button>
+                                    <button type="submit" name="action" value="aprobar" class="bg-green-500/20 text-green-400 font-semibold border border-green-500/30 px-4 py-2 rounded-lg hover:bg-green-500/40 hover:text-white transition shadow-[0_0_10px_rgba(34,197,94,0.1)]">Approve</button>
+                                    <button type="submit" name="action" value="rechazar" class="bg-red-500/10 text-red-500 font-semibold border border-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/30 hover:text-white transition ml-2 shadow-[0_0_10px_rgba(239,68,68,0.1)]">Deny</button>
                                 </form>
                             </td>
                         </tr>
@@ -85,8 +85,8 @@
                         <tr>
                             <td colspan="5" class="p-12 text-center text-gray-500 border-b border-gray-800 bg-gray-900/10">
                                 <svg class="w-16 h-16 mx-auto mb-4 text-gray-700 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <p class="text-lg font-bold text-gray-400">Excelentes noticias</p>
-                                <p class="text-sm mt-1">No hay ninguna solicitud de torneo en tu bandeja de pendientes.</p>
+                                <p class="text-lg font-bold text-gray-400">Great news</p>
+                                <p class="text-sm mt-1">There are no pending tournament requests in your inbox.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -94,7 +94,7 @@
                 </table>
             </div>
 
-            <h3 class="text-2xl font-bold text-yellow-500 mb-6 mt-10">Solicitudes de Cambio/Edición en Torneos Aprobados</h3>
+            <h3 class="text-2xl font-bold text-yellow-500 mb-6 mt-10">Change/Edit Requests for Approved Tournaments</h3>
             <div class="bg-card border border-gray-800 rounded-xl overflow-hidden mb-12">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-800">
@@ -128,8 +128,7 @@
                         {% empty %}
                         <tr>
                             <td colspan="5" class="p-12 text-center text-gray-500 border-b border-gray-800 bg-gray-900/10">
-                                <p class="text-lg font-bold text-gray-400">Todo en orden</p>
-                                <p class="text-sm mt-1">No hay solicitudes de modificación pendientes.</p>
+                                <p class="text-sm">There are no pending modification requests.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -137,15 +136,15 @@
                 </table>
             </div>
 
-            <h3 class="text-2xl font-bold text-blue-400 mb-6 mt-10">Aprobación de Publicidad en Canchas</h3>
+            <h3 class="text-2xl font-bold text-blue-400 mb-6 mt-10">Promotion Requests (Priority Visibility)</h3>
             <div class="bg-card border border-gray-800 rounded-xl overflow-hidden mb-12">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-800">
                         <tr>
-                            <th class="p-5 font-semibold">Cancha</th>
-                            <th class="p-5 font-semibold">Evento a Publicitar</th>
-                            <th class="p-5 font-semibold">Texto</th>
-                            <th class="p-5 font-semibold text-right">Acción</th>
+                            <th class="p-5 font-semibold">Tournament</th>
+                            <th class="p-5 font-semibold">Description of Change</th>
+                            <th class="p-5 font-semibold">Request Date</th>
+                            <th class="p-5 font-semibold text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-800">
@@ -229,7 +228,7 @@
     {% elif user.rol == 'DUEÑO' %}
         <section>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h3 class="text-xl font-semibold text-neon">Mis Canchas</h3>
+                <h3 class="text-xl font-bold text-neon mb-6">Manage Your Courts</h3>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <a href="{% url 'canchas:nueva' %}" class="flex-1 sm:flex-none text-center bg-gray-900 border border-neon/50 text-neon px-4 py-2 rounded-lg font-bold hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.2)]">
                         + Nueva Cancha
@@ -242,86 +241,67 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for cancha in mis_canchas %}
-                <div class="bg-card border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition duration-300 group flex flex-col">
-                    <div class="relative h-40 overflow-hidden bg-gray-900 flex items-center justify-center">
-                        {% if cancha.imagen %}
-                            <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}" 
-                                 class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
-                        {% else %}
-                            <span class="text-gray-500 text-sm font-bold uppercase tracking-widest">{{ cancha.deporte.nombre|default:"Cancha" }}</span>
-                        {% endif %}
-                        <div class="absolute top-3 right-3 bg-dark/80 backdrop-blur border border-gray-700 text-neon text-sm px-2 py-1 rounded font-medium">
-                            $ {{ cancha.precio|floatformat:"0" }} COP
+                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-neon transition shadow-lg group">
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="text-lg font-bold text-white group-hover:text-neon transition">{{ cancha.nombre }}</h4>
+                            <span class="text-xs font-bold text-gray-500">{{ cancha.deporte.nombre }}</span>
                         </div>
-                    </div>
-                    <div class="p-5 flex-1 flex flex-col">
-                        <div class="flex items-start justify-between mb-2">
-                            <h4 class="text-lg font-bold text-white leading-tight pr-2 truncate">{{ cancha.nombre }}</h4>
-                            <span class="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-sm border border-gray-700 shrink-0">{{ cancha.deporte.nombre }}</span>
-                        </div>
-                        <p class="text-sm text-gray-400 truncate mb-4">{{ cancha.ubicacion }}</p>
-                        
-                        <!-- CRUD Actions -->
-                        <div class="mt-auto grid grid-cols-2 gap-2">
-                            <a href="{% url 'canchas:detalle' cancha.pk %}" class="text-center text-xs py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition font-medium border border-gray-700">
-                                Ver Detalles
-                            </a>
-                            <a href="{% url 'canchas:disponibilidad' cancha.pk %}" class="text-center text-xs py-2 bg-gray-800 hover:bg-neon hover:text-black hover:border-neon text-gray-300 rounded transition font-medium border border-gray-700">
-                                Horarios
-                            </a>
-                            <a href="{% url 'canchas:editar' cancha.pk %}" class="col-span-2 text-center text-xs py-2 bg-gray-900 hover:bg-white hover:text-black text-gray-400 rounded transition font-medium border border-gray-700 border-dashed">
-                                Configuración de Cancha
-                            </a>
+                        <p class="text-sm text-gray-400 mb-4 line-clamp-2 italic">"{{ cancha.descripcion|default:'No description' }}"</p>
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
+                            <span class="text-neon font-bold">${{ cancha.precio|floatformat:"0" }} COP</span>
+                            <a href="{% url 'canchas:detalle' cancha.id %}" class="text-xs text-white hover:underline">View Details</a>
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="col-span-full border-2 border-dashed border-gray-800 bg-gray-900/40 backdrop-blur-sm rounded-xl p-12 flex flex-col items-center text-center text-gray-400 hover:border-neon/50 transition-colors group">
-                    <svg class="w-16 h-16 mb-4 text-neon/40 group-hover:text-neon group-hover:scale-110 transition-all duration-300 drop-shadow-[0_0_8px_rgba(0,255,136,0.3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    <p class="text-xl font-bold text-white mb-2">Aún no tienes canchas registradas</p>
-                    <p class="text-sm text-gray-500 mb-6">Ofrece tu espacio y comienza a recibir reservas ahora mismo.</p>
-                    <a href="{% url 'canchas:nueva' %}" class="bg-neon text-dark px-6 py-2.5 rounded-lg font-bold hover:bg-green-400 transition-colors shadow-[0_0_15px_rgba(0,255,136,0.2)]">
-                        + Registrar Cancha
-                    </a>
+                <div class="col-span-full border-2 border-dashed border-gray-800 rounded-xl p-10 text-center text-gray-500">
+                    <p>You haven't registered any courts yet.</p>
+                    <a href="{% url 'canchas:crear' %}" class="mt-4 inline-block text-neon hover:underline font-bold">+ Register My First Court</a>
                 </div>
                 {% endfor %}
             </div>
         </section>
 
         <section>
-            <h3 class="text-xl font-semibold text-neon mb-4">Mis Torneos Organizados</h3>
-            <ul class="space-y-3">
-                {% for torneo in mis_torneos %}
-                <li class="bg-card border border-gray-800 rounded-lg p-4 flex items-center justify-between hover:border-gray-600 transition">
-                    <div>
-                        <h4 class="font-bold">{{ torneo.nombre }}</h4>
-                        <p class="text-sm text-gray-400">{{ torneo.get_estado_display }}</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            {% if torneo.is_approved %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/40 text-green-400 border border-green-800">Aprobado</span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/40 text-yellow-400 border border-yellow-800">Pendiente</span>
-                            {% endif %}
-                        </div>
-                        <div class="flex gap-2">
-                            <a href="{% url 'negocio:torneo_detalle' torneo.id %}" class="px-3 py-1 bg-gray-800 text-gray-300 text-xs rounded border border-gray-700 hover:bg-white hover:text-black transition font-semibold">Ver Detalles</a>
-                            {% if torneo.is_approved %}
-                            <a href="{% url 'negocio:solicitar_promocion' torneo.id %}" class="px-3 py-1 bg-blue-900/40 text-blue-400 text-xs rounded border border-blue-500/50 hover:bg-blue-500 hover:text-black transition font-semibold">Promocionar</a>
-                            <a href="{% url 'negocio:solicitar_modificacion_torneo' torneo.id %}" class="px-3 py-1 bg-yellow-900/30 text-yellow-500 text-xs rounded border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition font-semibold">Solicitar Edición</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </li>
-                {% empty %}
-                <div class="col-span-full border-2 border-dashed border-gray-800 bg-gray-900/40 backdrop-blur-sm rounded-xl p-10 flex flex-col items-center text-center text-gray-400 hover:border-yellow-500/50 transition-colors group">
-                    <svg class="w-16 h-16 mb-4 text-yellow-500/40 group-hover:text-yellow-400 group-hover:scale-110 transition-all duration-300 drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-                    <p class="text-lg font-bold text-white mb-2">No has organizado torneos</p>
-                    <p class="text-sm text-gray-500">Crea el primer campeonato para atraer competidores a tus espacios.</p>
-                </div>
-                {% endfor %}
-            </ul>
+            <h3 class="text-xl font-bold text-blue-400 mb-6 mt-12">Your Tournaments Under Management</h3>
+            <div class="bg-card border border-gray-800 rounded-xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs font-bold border-b border-gray-800 uppercase tracking-widest">
+                        <tr>
+                            <th class="p-5">Tournament</th>
+                            <th class="p-5">Sport</th>
+                            <th class="p-5">Teams</th>
+                            <th class="p-5">Status</th>
+                            <th class="p-5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        {% for torneo in mis_torneos %}
+                        <tr class="hover:bg-gray-800/30 transition">
+                            <td class="p-5 text-white font-bold">{{ torneo.nombre }}</td>
+                            <td class="p-5 text-gray-400">{{ torneo.deporte.nombre }}</td>
+                            <td class="p-5 text-gray-400">{{ torneo.equipos.count }}/{{ torneo.max_equipos }}</td>
+                            <td class="p-5">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase
+                                    {% if torneo.estado == 'PENDIENTE' %}bg-yellow-500/10 text-yellow-500 border border-yellow-500/30
+                                    {% elif torneo.estado == 'APROBADO' %}bg-green-500/10 text-green-400 border border-green-500/30
+                                    {% else %}bg-gray-800 text-gray-500{% endif %}">
+                                    {{ torneo.estado }}
+                                </span>
+                            </td>
+                            <td class="p-5 text-right">
+                                <a href="{% url 'negocio:torneo_detalle' torneo.id %}" class="text-xs text-neon hover:underline font-bold">Manage Fixture</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-10 text-center text-gray-500 italic">No tournaments created. Go to the side menu to "Create Tournament".</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
 
     {% elif user.rol == 'DEPORTISTA' %}
@@ -367,7 +347,7 @@
                         {% if cancha.imagen %}
                             <img src="{{ cancha.imagen.url }}" alt="{{ cancha.nombre }}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700">
                         {% else %}
-                            <span class="text-gray-500 font-bold uppercase tracking-widest">{{ cancha.deporte.nombre|default:"Deporte" }}</span>
+                            <span class="text-gray-500 font-bold uppercase tracking-widest">{{ cancha.deporte.nombre|default:"Sport" }}</span>
                             <div class="absolute inset-0 flex items-center justify-center opacity-30">
                                 <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
@@ -394,7 +374,7 @@
                         <div class="mt-auto">
                             <a href="{% url 'negocio:crear_reserva' cancha.id %}" class="block text-center w-full relative overflow-hidden bg-gray-800 text-white font-bold py-3 px-4 rounded-xl border border-gray-700 hover:border-neon group/btn transition-all duration-300">
                                 <div class="absolute inset-0 bg-neon translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-out"></div>
-                                <span class="relative z-10 group-hover/btn:text-black transition-colors duration-300">Reservar Ahora</span>
+                                <span class="relative z-10 group-hover/btn:text-black transition-colors duration-300">Book Now</span>
                             </a>
                         </div>
                     </div>
@@ -402,15 +382,14 @@
                 {% empty %}
                 <div class="col-span-full border-2 border-dashed border-gray-800/60 bg-gray-900/20 backdrop-blur-sm rounded-2xl p-12 text-center text-gray-400 transition-all hover:border-gray-700">
                     <svg class="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <p class="text-lg">No hay canchas registradas en la plataforma por ahora.</p>
+                    <p class="text-lg">No courts registered on the platform for now.</p>
                 </div>
                 {% endfor %}
             </div>
         </section>
 
-        <section>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h3 class="text-xl font-semibold text-neon">Mis Reservas Activas</h3>
+                <h3 class="text-xl font-semibold text-neon">My Active Bookings</h3>
                 <div class="flex gap-2">
                     <a href="{% url 'negocio:reporte_reservas_pdf' %}" download="reservas.pdf" class="bg-gray-800/80 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-white hover:text-black transition shadow-sm">📄 PDF</a>
                     <a href="{% url 'negocio:reporte_reservas_excel' %}" download="reservas.xlsx" class="bg-gray-800/80 text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:bg-neon hover:text-black transition shadow-[0_0_10px_rgba(0,255,136,0.1)]">📊 Excel</a>
@@ -426,26 +405,26 @@
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                             <div>
-                                <h4 class="font-bold text-white">{{ reserva.cancha.nombre }}</h4>
-                                <p class="text-sm text-gray-400">{{ reserva.fecha }} • {{ reserva.hora }}</p>
+                                    <h4 class="text-sm font-bold text-white mb-2">Available Now</h4>
+                                    <p class="text-xs text-gray-400">Book your favorite court and start the game.</p>
                             </div>
                         </div>
                         <div class="sm:text-right flex flex-col sm:items-end gap-2 text-left">
                             <div>
                                 {% if reserva.pagado %}
-                                    <span class="block text-xs font-semibold text-green-400 mb-1">Pagado</span>
+                                    <span class="block text-xs font-semibold text-green-400 mb-1">Paid</span>
                                     <a href="{% url 'negocio:factura_detalle' reserva.factura.id %}"
                                         class="text-sm text-gray-400 hover:text-white hover:underline transition">
-                                        Ver Factura
+                                        View Invoice
                                     </a>
                                 {% else %}
                                     {% if reserva.estado == 'PROGRAMADA' %}
-                                        <span class="block text-xs font-semibold text-yellow-400 mb-1">Pago Pendiente</span>
-                                        <a href="{% url 'negocio:iniciar_pago' reserva.id %}" class="text-sm text-neon hover:text-green-300 font-medium transition block sm:inline px-3 py-1 border border-neon/50 rounded-md bg-neon/10 hover:bg-neon/20 shadow-[0_0_10px_rgba(0,255,136,0.1)] mt-1">Pagar con Wompi</a>
+                                        <span class="block text-xs font-semibold text-yellow-400 mb-1">Pending Payment</span>
+                                        <a href="{% url 'negocio:iniciar_pago' reserva.id %}" class="text-sm text-neon hover:text-green-300 font-medium transition block sm:inline px-3 py-1 border border-neon/50 rounded-md bg-neon/10 hover:bg-neon/20 shadow-[0_0_10px_rgba(0,255,136,0.1)] mt-1">Pay with Wompi</a>
                                     {% elif reserva.estado == 'CANCELADA' %}
-                                        <span class="block text-xs font-semibold text-red-500 mb-1">Cancelada</span>
+                                        <span class="block text-xs font-semibold text-red-500 mb-1">Cancelled</span>
                                     {% elif reserva.estado == 'COMPLETADA' %}
-                                        <span class="block text-xs font-semibold text-blue-400 mb-1">Completada</span>
+                                        <span class="block text-xs font-semibold text-blue-400 mb-1">Completed</span>
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -453,7 +432,7 @@
                             {% if reserva.estado == 'PROGRAMADA' %}
                             <form action="{% url 'negocio:cancelar_reserva' reserva.id %}" method="post" class="mt-1 w-full sm:w-auto">
                                 {% csrf_token %}
-                                <button type="submit" class="text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400 bg-red-500/10 px-3 py-1 rounded transition w-full sm:w-auto">Cancelar Reserva</button>
+                                <button type="submit" class="text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400 bg-red-500/10 px-3 py-1 rounded transition w-full sm:w-auto">Cancel Booking</button>
                             </form>
                             {% endif %}
                         </div>

@@ -8,14 +8,14 @@
     <div class="auth-card" style="margin:0; width:1000%; max-width:500px">
 
 
-        <h2 class="auth-title">Mi Perfil</h2>
-        <p class="auth-subtitle">Actualiza tu información personal</p>
+        <h2 class="auth-title">My Profile</h2>
+        <p class="auth-subtitle">Update your personal information</p>
 
         <form method="POST" action="{% url 'usuarios:perfil' %}">
             {% csrf_token %}
 
             <div class="form-group">
-                <label class="form-label" for="{{ form.first_name.id_for_label }}">Nombre</label>
+                <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
                 <div class="input-wrapper">
                     <i data-lucide="user" class="input-icon"></i>
                     <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}"
@@ -27,7 +27,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="{{ form.last_name.id_for_label }}">Apellido</label>
+                <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
                 <div class="input-wrapper">
                     <i data-lucide="users" class="input-icon"></i>
                     <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}"
@@ -39,7 +39,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="{{ form.email.id_for_label }}">Correo electrónico</label>
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email Address</label>
                 <div class="input-wrapper">
                     <i data-lucide="mail" class="input-icon"></i>
                     <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}"
@@ -51,14 +51,14 @@
             </div>
 
             <button type="submit" class="btn-primary mt-4">
-                <span>Guardar Cambios</span>
+                <span>Save Changes</span>
             </button>
         </form>
 
-        <div class="auth-divider"><span>Seguridad</span></div>
+        <div class="auth-divider"><span>Security</span></div>
 
         <a href="{% url 'usuarios:cambiar_password' %}" class="btn-secondary">
-            Cambiar Contraseña
+            Change Password
         </a>
     </div>
 </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoSport — Registro</title>
+    <title>GoSport — Register</title>
     {% load static %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,7 +59,7 @@
     <div class="auth-card" style="max-width: 480px;">
 
         <div class="auth-logo">Go<span>Sport</span></div>
-        <p class="auth-tagline">Crea tu cuenta y empieza a jugar</p>
+        <p class="auth-tagline">Create your account and start playing</p>
 
         {% if messages %}
             {% for message in messages %}
@@ -71,7 +71,7 @@
             {% endfor %}
         {% endif %}
 
-        <h2 class="auth-title">Crear cuenta</h2>
+        <h2 class="auth-title">Create Account</h2>
 
         <form method="POST">
             {% csrf_token %}
@@ -133,18 +133,37 @@
                 {% endfor %}
             </div>
 
-            <!-- Nota informativa sobre roles -->
-            <div style="background: rgba(0,228,109,0.06); border: 1px solid rgba(0,228,109,0.2); border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 0.5rem; display: flex; gap: 0.75rem; align-items: flex-start;">
-                <span style="font-size: 1.1rem; flex-shrink:0;">⚽</span>
-                <div>
-                    <p style="font-size: 0.8rem; color: #00e46d; font-weight: 600; margin-bottom: 0.15rem;">Te registrarás como Deportista</p>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">¿Tienes una cancha y quieres ofrecerla? Después de crear tu cuenta podrás solicitar el rol de <strong style="color:var(--text-primary)">Dueño de Cancha</strong> desde tu perfil.</p>
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label class="form-label">How will you use GoSport?</label>
+                <div class="role-grid">
+                    <label class="role-option">
+                        <input type="radio" name="rol" value="DEPORTISTA"
+                               {% if form.rol.value == 'DEPORTISTA' or not form.rol.value %}checked{% endif %}>
+                        <div class="role-card">
+                            <div class="role-emoji">⚽</div>
+                            <div class="role-name">Athlete</div>
+                            <div class="role-desc">I book courts</div>
+                        </div>
+                    </label>
+                    <label class="role-option">
+                        <input type="radio" name="rol" value="DUEÑO"
+                               {% if form.rol.value == 'DUEÑO' %}checked{% endif %}>
+                        <div class="role-card">
+                            <div class="role-emoji">🏟️</div>
+                            <div class="role-name">Owner</div>
+                            <div class="role-desc">I offer courts</div>
+                        </div>
+                    </label>
                 </div>
+                {% for error in form.rol.errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
             </div>
 
             <!-- Contraseña -->
             <div class="form-group">
-                <label class="form-label">Contraseña</label>
+                <label class="form-label">Password</label>
                 <div class="input-wrapper">
                     <i data-lucide="lock" class="input-icon"></i>
                     <input type="password" name="password1" id="pass1"
@@ -162,7 +181,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Confirmar contraseña</label>
+                <label class="form-label">Confirm password</label>
                 <div class="input-wrapper">
                     <i data-lucide="lock" class="input-icon"></i>
                     <input type="password" name="password2" id="pass2"
@@ -185,13 +204,13 @@
             {% endif %}
 
             <button type="submit" class="btn-primary">
-                <span>Crear cuenta</span>
+                <span>Create Account</span>
             </button>
         </form>
 
         <p class="auth-footer">
-            ¿Ya tienes cuenta?
-            <a href="{% url 'login' %}">Inicia sesión</a>
+            Already have an account?
+            <a href="{% url 'login' %}">Log In</a>
         </p>
     </div>
 

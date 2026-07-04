@@ -37,13 +37,13 @@ class Cancha(models.Model):
 
 class Disponibilidad(models.Model):
     DIA_CHOICES = [
-        (0, 'Lunes'),
-        (1, 'Martes'),
-        (2, 'Miércoles'),
-        (3, 'Jueves'),
-        (4, 'Viernes'),
-        (5, 'Sábado'),
-        (6, 'Domingo'),
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
     ]
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='disponibilidades')
     dia_semana = models.IntegerField(choices=DIA_CHOICES)

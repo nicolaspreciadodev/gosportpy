@@ -4,9 +4,9 @@ from canchas.models import Cancha, Deporte
 
 class Torneo(models.Model):
     ESTADO_CHOICES = (
-        ('PENDIENTE', 'Pendiente'),
-        ('PUBLICADO', 'Publicado'),
-        ('RECHAZADO', 'Rechazado'),
+        ('PENDIENTE', 'Pending'),
+        ('PUBLICADO', 'Published'),
+        ('RECHAZADO', 'Rejected'),
     )
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
@@ -22,8 +22,8 @@ class Torneo(models.Model):
     # Nuevos campos de Liga
     max_equipos = models.PositiveIntegerField(default=8)
     FORMATO_CHOICES = (
-        ('LIGA', 'Liga (Todos contra todos)'),
-        ('ELIMINACION', 'Eliminación Directa'),
+        ('LIGA', 'League (Round-robin)'),
+        ('ELIMINACION', 'Direct Elimination'),
     )
     formato = models.CharField(max_length=20, choices=FORMATO_CHOICES, default='LIGA')
     fixture_generado = models.BooleanField(default=False)
@@ -35,9 +35,9 @@ from django.core.exceptions import ValidationError
 
 class Reserva(models.Model):
     ESTADO_CHOICES = (
-        ('PROGRAMADA', 'Programada'),
-        ('COMPLETADA', 'Completada'),
-        ('CANCELADA', 'Cancelada'),
+        ('PROGRAMADA', 'Scheduled'),
+        ('COMPLETADA', 'Completed'),
+        ('CANCELADA', 'Cancelled'),
     )
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas')
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='reservas')
@@ -58,7 +58,7 @@ class Reserva(models.Model):
             dt_fin = datetime.datetime.combine(self.fecha, self.hora_fin)
 
         if dt_fin <= dt_inicio:
-            raise ValidationError("La hora de fin debe ser posterior a la hora de inicio.")
+            raise ValidationError("The end time must be after the start time.")
 
         # Check overlap
         from django.db.models import Q
@@ -76,13 +76,13 @@ class Reserva(models.Model):
             res_fin = datetime.datetime.combine(res.fecha, res.hora_fin)
             
             if (dt_inicio < res_fin) and (dt_fin > res_inicio):
-                raise ValidationError(f"La cancha {self.cancha.nombre} ya tiene una reserva en ese horario ({res.hora.strftime('%H:%M')} - {res.hora_fin.strftime('%H:%M')}).")
+                raise ValidationError(f"The court {self.cancha.nombre} already has a booking in that time slot ({res.hora.strftime('%H:%M')} - {res.hora_fin.strftime('%H:%M')}).")
 
         if self.estado != 'CANCELADA':
             # 4. Validar Fecha y Hora en el futuro
             from django.utils import timezone
             if dt_inicio < timezone.now():
-                raise ValidationError("No puedes realizar una reserva en una fecha o hora que ya ha pasado.")
+                raise ValidationError("You cannot make a booking for a past date or time.")
 
             # 5. Validar Disponibilidad de la Cancha (Horarios de apertura/cierre)
             dia_semana = self.fecha.weekday() # 0=Lunes, 6=Domingo
@@ -90,7 +90,7 @@ class Reserva(models.Model):
             dispos = Disponibilidad.objects.filter(cancha=self.cancha, dia_semana=dia_semana)
             
             if not dispos.exists():
-                raise ValidationError(f"La cancha no está disponible los días {self.get_fecha_display_day()}.")
+                raise ValidationError(f"The court is not available on {self.get_fecha_display_day()}.")
             
             # Debe estar contenido en al menos uno de los rangos de disponibilidad
             esta_dentro = False
@@ -101,10 +101,10 @@ class Reserva(models.Model):
             
             if not esta_dentro:
                 horarios_str = " | ".join([f"{d.hora_inicio.strftime('%H:%M')} - {d.hora_fin.strftime('%H:%M')}" for d in dispos])
-                raise ValidationError(f"Horario fuera de servicio. Disponibilidad para hoy: {horarios_str}")
+                raise ValidationError(f"Outside opening hours. Availability for today: {horarios_str}")
 
     def get_fecha_display_day(self):
-        dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+        dias = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         return dias[self.fecha.weekday()]
 
     def save(self, *args, **kwargs):
@@ -161,8 +161,8 @@ class Partido(models.Model):
     Representa un partido dentro de un torneo (especialmente formato Liga).
     """
     ESTADO_CHOICES = (
-        ('PENDIENTE', 'Pendiente'),
-        ('JUGADO', 'Jugado'),
+        ('PENDIENTE', 'Pending'),
+        ('JUGADO', 'Played'),
     )
     torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='partidos')
     equipo_local = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='partidos_local')
@@ -211,9 +211,9 @@ class SolicitudModificacionTorneo(models.Model):
     para modificar un torneo que ya ha sido aprobado.
     """
     ESTADO_CHOICES = (
-        ('PENDIENTE', 'Pendiente'),
-        ('APROBADO', 'Aprobado'),
-        ('RECHAZADO', 'Rechazado'),
+        ('PENDIENTE', 'Pending'),
+        ('APROBADO', 'Approved'),
+        ('RECHAZADO', 'Rejected'),
     )
     torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='solicitudes_modificacion')
     descripcion_cambio = models.TextField(help_text="Explique detalladamente qué cambios necesita hacer en el torneo.")
@@ -229,9 +229,9 @@ class PromocionTorneo(models.Model):
     Representa una solicitud de publicidad de un torneo en una cancha específica.
     """
     ESTADO_CHOICES = (
-        ('PENDIENTE', 'Pendiente'),
-        ('APROBADO', 'Aprobado'),
-        ('RECHAZADO', 'Rechazado'),
+        ('PENDIENTE', 'Pending'),
+        ('APROBADO', 'Approved'),
+        ('RECHAZADO', 'Rejected'),
     )
     torneo = models.ForeignKey(Torneo, on_delete=models.CASCADE, related_name='promociones')
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='promociones')

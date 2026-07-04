@@ -17,16 +17,16 @@ class RegistroUsuarioForm(UserCreationForm):
     first_name = forms.CharField(
         max_length=150,
         required=True,
-        label='Nombre',
+        label='First Name',
     )
     last_name = forms.CharField(
         max_length=150,
         required=True,
-        label='Apellido',
+        label='Last Name',
     )
     email = forms.EmailField(
         required=True,
-        label='Correo electrónico',
+        label='Email Address',
     )
 
     class Meta:
@@ -48,26 +48,24 @@ class RegistroUsuarioForm(UserCreationForm):
             user.save()
         return user
 
-    def clean_first_name(self):
-        first_name = self.cleaned_data.get('first_name', '')
         if re.search(r'[0-9!@#\$%\^&\*\(\)_\+\-\=\[\]\{\};:\'",<>\.\?\/\\|]', first_name):
-            raise forms.ValidationError('El nombre no debe contener números ni caracteres especiales.')
+            raise forms.ValidationError('The name must not contain numbers or special characters.')
         return first_name
 
     def clean_last_name(self):
         last_name = self.cleaned_data.get('last_name', '')
         if re.search(r'[0-9!@#\$%\^&\*\(\)_\+\-\=\[\]\{\};:\'",<>\.\?\/\\|]', last_name):
-            raise forms.ValidationError('El apellido no debe contener números ni caracteres especiales.')
+            raise forms.ValidationError('The last name must not contain numbers or special characters.')
         return last_name
 
     def clean_email(self):
         """Valida formato y unicidad explícita."""
         email = self.cleaned_data.get('email', '').lower()
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
-            raise forms.ValidationError('Ingresa un correo electrónico válido (ejemplo: usuario@dominio.com).')
+            raise forms.ValidationError('Please enter a valid email address (example: user@domain.com).')
         
         if CustomUser.objects.filter(email=email).exists():
-            raise forms.ValidationError('Este correo ya está registrado en la plataforma.')
+            raise forms.ValidationError('This email is already registered on the platform.')
         return email
 
 
@@ -80,18 +78,18 @@ class PerfilForm(forms.ModelForm):
     first_name = forms.CharField(
         max_length=150,
         required=True,
-        label='Nombre',
+        label='First Name',
         widget=forms.TextInput(attrs={'class': 'form-input'})
     )
     last_name = forms.CharField(
         max_length=150,
         required=True,
-        label='Apellido',
+        label='Last Name',
         widget=forms.TextInput(attrs={'class': 'form-input'})
     )
     email = forms.EmailField(
         required=True,
-        label='Correo electrónico',
+        label='Email Address',
         widget=forms.EmailInput(attrs={'class': 'form-input'})
     )
 
@@ -102,23 +100,23 @@ class PerfilForm(forms.ModelForm):
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name', '')
         if re.search(r'[0-9!@#\$%\^&\*\(\)_\+\-\=\[\]\{\};:\'",<>\.\?\/\\|]', first_name):
-            raise forms.ValidationError('El nombre no debe contener números ni caracteres especiales.')
+            raise forms.ValidationError('The name must not contain numbers or special characters.')
         return first_name
 
     def clean_last_name(self):
         last_name = self.cleaned_data.get('last_name', '')
         if re.search(r'[0-9!@#\$%\^&\*\(\)_\+\-\=\[\]\{\};:\'",<>\.\?\/\\|]', last_name):
-            raise forms.ValidationError('El apellido no debe contener números ni caracteres especiales.')
+            raise forms.ValidationError('The last name must not contain numbers or special characters.')
         return last_name
 
     def clean_email(self):
         """Valida que el nuevo email sea correcto y no pertenezca a OTRO usuario."""
         email = self.cleaned_data.get('email', '').lower()
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
-            raise forms.ValidationError('Ingresa un correo electrónico válido (ejemplo: usuario@dominio.com).')
+            raise forms.ValidationError('Please enter a valid email address (example: user@domain.com).')
             
         if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError('Este correo ya está en uso por otra cuenta.')
+            raise forms.ValidationError('This email is already in use by another account.')
         return email
 
 
@@ -129,14 +127,14 @@ class SolicitudRolDueñoForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-input',
             'rows': 5,
-            'placeholder': 'Cuéntanos brevemente tu establecimiento, dirección aproximada y por qué deseas ser parte de GoSport como Dueño de Cancha...',
+            'placeholder': 'Tell us briefly about your establishment, approximate address, and why you want to be part of GoSport as a Court Owner...',
         }),
-        label='Motivo de la solicitud',
+        label='Reason for Requirement',
         min_length=30,
         max_length=1000,
         error_messages={
-            'min_length': 'El motivo debe tener al menos 30 caracteres.',
-            'max_length': 'El motivo no puede superar los 1000 caracteres.',
+            'min_length': 'The reason must be at least 30 characters long.',
+            'max_length': 'The reason cannot exceed 1000 characters.',
         }
     )
 
