@@ -42,9 +42,8 @@ class RegistroUsuarioForm(UserCreationForm):
         ]
 
     def save(self, commit=True):
-        """Guarda el usuario con rol DEPORTISTA por defecto."""
+        """Guarda el usuario con el rol seleccionado."""
         user = super().save(commit=False)
-        user.rol = 'DEPORTISTA'
         if commit:
             user.save()
         return user
