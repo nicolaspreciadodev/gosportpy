@@ -19,6 +19,12 @@ from django.urls import path, include
 from core.views import DashboardView, AdminAnalyticsView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import render
+
+def custom_page_not_found_view(request, exception):
+    return render(request, "404.html", status=404)
+
+handler404 = 'GoSport.urls.custom_page_not_found_view'
 
 urlpatterns = [
     path('admin/', admin.site.urls),

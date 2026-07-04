@@ -78,6 +78,34 @@ class Reserva(models.Model):
             if (dt_inicio < res_fin) and (dt_fin > res_inicio):
                 raise ValidationError(f"La cancha {self.cancha.nombre} ya tiene una reserva en ese horario ({res.hora.strftime('%H:%M')} - {res.hora_fin.strftime('%H:%M')}).")
 
+        # 4. Validar Fecha y Hora en el futuro
+        from django.utils import timezone
+        if dt_inicio < timezone.now():
+            raise ValidationError("No puedes realizar una reserva en una fecha o hora que ya ha pasado.")
+
+        # 5. Validar Disponibilidad de la Cancha (Horarios de apertura/cierre)
+        dia_semana = self.fecha.weekday() # 0=Lunes, 6=Domingo
+        from canchas.models import Disponibilidad
+        dispos = Disponibilidad.objects.filter(cancha=self.cancha, dia_semana=dia_semana)
+        
+        if not dispos.exists():
+            raise ValidationError(f"La cancha no está disponible los días {self.get_fecha_display_day()}.")
+        
+        # Debe estar contenido en al menos uno de los rangos de disponibilidad
+        esta_dentro = False
+        for disp in dispos:
+            if self.hora >= disp.hora_inicio and self.hora_fin <= disp.hora_fin:
+                esta_dentro = True
+                break
+        
+        if not esta_dentro:
+            horarios_str = " | ".join([f"{d.hora_inicio.strftime('%H:%M')} - {d.hora_fin.strftime('%H:%M')}" for d in dispos])
+            raise ValidationError(f"Horario fuera de servicio. Disponibilidad para hoy: {horarios_str}")
+
+    def get_fecha_display_day(self):
+        dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+        return dias[self.fecha.weekday()]
+
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
