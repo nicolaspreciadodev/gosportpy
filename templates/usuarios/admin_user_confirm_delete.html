@@ -1,15 +1,58 @@
 {% extends 'base.html' %}
-{% block title %}Eliminar Usuario{% endblock %}
+{% block title %}Eliminar Usuario — GoSport Admin{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto mt-20 text-center space-y-6 bg-gray-900 border border-red-500/30 p-8 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.1)]">
-    <svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-    <h2 class="text-2xl font-bold text-white">¿Estás seguro?</h2>
-    <p class="text-gray-400">Estás a punto de eliminar al usuario <span class="font-bold text-white">{{ object.username }}</span>. Esta acción <span class="text-red-400 font-bold">no se puede deshacer</span> y borrará permanentemente al usuario y toda la información asociada que dependa de él.</p>
+<div class="max-w-lg mx-auto mt-16 bg-gray-900 border {% if can_be_deleted %}border-red-500/30{% else %}border-yellow-500/30{% endif %} p-8 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.3)] space-y-6">
     
-    <form method="post" class="flex justify-center gap-4 pt-4">
-        {% csrf_token %}
-        <a href="{% url 'usuarios:admin_user_list' %}" class="px-6 py-2 bg-gray-800 border border-gray-700 text-white rounded font-bold hover:bg-gray-700">Cancelar</a>
-        <button type="submit" class="px-6 py-2 bg-red-500/20 text-red-500 border border-red-500/50 rounded font-bold hover:bg-red-500 hover:text-white transition">Sí, Eliminar</button>
-    </form>
+    <div class="text-center space-y-4">
+        {% if can_be_deleted %}
+            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white">¿Estás completamente seguro?</h2>
+            <p class="text-gray-400 text-sm leading-relaxed">
+                Estás a punto de eliminar permanentemente al usuario <strong class="text-white">@{{ object.username }}</strong>.
+                Esta acción no se puede revertir.
+            </p>
+            
+            <form method="post" class="flex justify-center gap-4 pt-4 border-t border-gray-800">
+                {% csrf_token %}
+                <a href="{% url 'usuarios:admin_user_list' %}" class="flex-1 text-center px-6 py-2.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg font-bold hover:bg-gray-700 transition">
+                    Cancelar
+                </a>
+                <button type="submit" class="flex-1 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold transition shadow-lg shadow-red-600/20">
+                    Sí, Eliminar
+                </button>
+            </form>
+        {% else %}
+            <div class="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white">Eliminación Bloqueada</h2>
+            <p class="text-yellow-500 text-sm font-semibold">Acción restringida por integridad de la base de datos</p>
+            
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-left space-y-2 mt-4 text-sm text-gray-300">
+                <p class="font-medium text-white mb-2">El usuario <strong class="text-yellow-400">@{{ object.username }}</strong> tiene registros asociados activos:</p>
+                <ul class="space-y-1.5 list-disc list-inside">
+                    {% if has_reservas_deportista %}
+                        <li>Historial de reservas de cancha como Deportista.</li>
+                    {% endif %}
+                    {% if has_reservas_owner %}
+                        <li>Reservas registradas en las canchas de su propiedad.</li>
+                    {% endif %}
+                    {% if has_torneos %}
+                        <li>Torneos u organizados en la plataforma.</li>
+                    {% endif %}
+                </ul>
+                <p class="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-700">Para preservar la coherencia y el historial financiero/operativo de la aplicación, este usuario no puede ser removido.</p>
+            </div>
+            
+            <div class="pt-6">
+                <a href="{% url 'usuarios:admin_user_list' %}" class="block text-center px-6 py-2.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg font-bold hover:bg-gray-700 transition">
+                    Volver a Gestión de Usuarios
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
 </div>
 {% endblock %}

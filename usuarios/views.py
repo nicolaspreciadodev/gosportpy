@@ -184,9 +184,47 @@ class AdminUserDeleteView(UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_superuser
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_to_delete = self.get_object()
+        
+        # Verificar si tiene reservas (como jugador/deportista)
+        has_reservas_deportista = user_to_delete.reservas.exists()
+        
+        # Verificar si tiene reservas en sus canchas (como dueño)
+        from negocio.models import Reserva
+        has_reservas_owner = Reserva.objects.filter(cancha__dueño=user_to_delete).exists()
+        
+        # Verificar si tiene torneos organizados
+        has_torneos = False
+        if hasattr(user_to_delete, 'torneos_organizados'):
+            has_torneos = user_to_delete.torneos_organizados.exists()
+            
+        context['can_be_deleted'] = not (has_reservas_deportista or has_reservas_owner or has_torneos)
+        context['has_reservas_deportista'] = has_reservas_deportista
+        context['has_reservas_owner'] = has_reservas_owner
+        context['has_torneos'] = has_torneos
+        return context
+
     def form_valid(self, form):
+        user_to_delete = self.get_object()
+        
+        has_reservas_deportista = user_to_delete.reservas.exists()
+        from negocio.models import Reserva
+        has_reservas_owner = Reserva.objects.filter(cancha__dueño=user_to_delete).exists()
+        has_torneos = False
+        if hasattr(user_to_delete, 'torneos_organizados'):
+            has_torneos = user_to_delete.torneos_organizados.exists()
+
+        if has_reservas_deportista or has_reservas_owner or has_torneos:
+            messages.error(
+                self.request,
+                f"No se puede eliminar al usuario '{user_to_delete.username}' porque tiene historial de reservas o torneos en el sistema."
+            )
+            return redirect('usuarios:admin_user_list')
+            
         success_url = self.get_success_url()
-        self.object.delete()
+        user_to_delete.delete()
         messages.success(self.request, "Usuario eliminado correctamente.")
         return redirect(success_url)
 
